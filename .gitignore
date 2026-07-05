@@ -1,0 +1,14 @@
+node_modules
+.next
+.open-next
+.vercel
+dist
+coverage
+cloudflare-env.d.ts
+
+.env
+.env*.local
+
+*.tsbuildinfo
+*.log
+.DS_Store
