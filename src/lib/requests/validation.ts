@@ -72,7 +72,20 @@ export function validateRequestForm(input: Record<string, string | null>) {
 
   if (
     input.preferredStartDate &&
+    !isValidIsoDate(input.preferredStartDate)
+  ) {
+    errors.preferredStartDate = "희망 시작일 형식이 올바르지 않습니다.";
+  }
+
+  if (input.preferredEndDate && !isValidIsoDate(input.preferredEndDate)) {
+    errors.preferredEndDate = "희망 종료일 형식이 올바르지 않습니다.";
+  }
+
+  if (
+    input.preferredStartDate &&
     input.preferredEndDate &&
+    isValidIsoDate(input.preferredStartDate) &&
+    isValidIsoDate(input.preferredEndDate) &&
     input.preferredStartDate > input.preferredEndDate
   ) {
     errors.preferredEndDate = "희망 종료일은 시작일 이후여야 합니다.";
@@ -131,4 +144,19 @@ function stringValue(value: FormDataEntryValue | null) {
 function nullableStringValue(value: FormDataEntryValue | null) {
   const string = stringValue(value).trim();
   return string.length > 0 ? string : null;
+}
+
+function isValidIsoDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }

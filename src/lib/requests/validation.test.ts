@@ -39,6 +39,23 @@ describe("request form validation", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("rejects invalid date values", () => {
+    const result = validateRequestForm({
+      brandName: "Pyda",
+      contactName: "담당자",
+      contactChannel: "이메일",
+      contactValue: "hello@example.com",
+      campaignBrief: "신규 캠페인을 소개하고 싶습니다.",
+      preferredStartDate: "2026-02-30",
+      preferredEndDate: "2026-03-01",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.preferredStartDate).toBeTruthy();
+    }
+  });
+
   it("builds trusted insert payload without client-controlled protected fields", () => {
     const result = validateRequestForm({
       brandName: "Pyda",

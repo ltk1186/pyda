@@ -3,9 +3,14 @@ export type SupabasePublicEnv = {
   publishableKey: string;
 };
 
+export type SupabaseAdminEnv = SupabasePublicEnv & {
+  secretKey: string;
+};
+
 type SupabaseEnvSource = {
   NEXT_PUBLIC_SUPABASE_URL?: string;
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
+  SUPABASE_SECRET_KEY?: string;
 };
 
 export function readSupabasePublicEnv(
@@ -21,4 +26,17 @@ export function readSupabasePublicEnv(
   }
 
   return { url, publishableKey };
+}
+
+export function readSupabaseAdminEnv(
+  env: SupabaseEnvSource = process.env as Record<string, string | undefined>,
+): SupabaseAdminEnv {
+  const publicEnv = readSupabasePublicEnv(env);
+  const secretKey = env.SUPABASE_SECRET_KEY;
+
+  if (!secretKey) {
+    throw new Error("Missing SUPABASE_SECRET_KEY for server admin access.");
+  }
+
+  return { ...publicEnv, secretKey };
 }

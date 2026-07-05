@@ -140,6 +140,7 @@ Implemented:
 - Late-login OAuth scaffold for Google and Kakao through Supabase Auth
 - Supabase SSR auth proxy for session refresh and claims-based current user checks
 - Logged-in advertiser request slice: request form, server-side request creation, and own request list/detail pages
+- Admin foundation slice: admin access check, server-only Supabase admin client, dashboard, request list/detail, admin notes, and allowed request status operations
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
 - Cloudflare Workers deployment scaffolding through OpenNext
 - Minimal lint, type-check, and unit test setup
@@ -149,6 +150,6 @@ Not implemented yet:
 - Actual OAuth provider configuration in Supabase
 - Real creator/listing data management
 - Creator flows
-- Admin console
+- Full admin console for creator/listing CRUD and onboarding
 - Payments
 - Notifications
