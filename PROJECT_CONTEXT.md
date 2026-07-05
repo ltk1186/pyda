@@ -138,6 +138,8 @@ Implemented:
 - Public marketplace first slice: home listing grid, platform filter, listing cards, and listing detail pages
 - Public marketplace hardening for DB-backed data source behavior and URL-based request intent
 - Late-login OAuth scaffold for Google and Kakao through Supabase Auth
+- Supabase SSR auth proxy for session refresh and claims-based current user checks
+- Logged-in advertiser request slice: request form, server-side request creation, and own request list/detail pages
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
 - Cloudflare Workers deployment scaffolding through OpenNext
 - Minimal lint, type-check, and unit test setup
@@ -145,7 +147,6 @@ Implemented:
 Not implemented yet:
 
 - Actual OAuth provider configuration in Supabase
-- Advertisement request form and request creation
 - Real creator/listing data management
 - Creator flows
 - Admin console

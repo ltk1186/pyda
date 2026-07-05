@@ -1,13 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ListingGallery } from "@/components/marketplace/listing-gallery";
 import { RequestCta } from "@/components/marketplace/request-cta";
 import { SampleBadge } from "@/components/marketplace/sample-badge";
+import { RequestForm } from "@/components/requests/request-form";
 import { getCurrentUser } from "@/lib/auth/session";
 import { shouldShowSampleBadge } from "@/lib/marketplace/badges";
 import { getPublicListingBySlug } from "@/lib/marketplace/data";
 import { formatAudienceSize, formatKrw } from "@/lib/marketplace/format";
+import { createAdvertisementRequest } from "./actions";
 
 type ListingDetailProps = {
   params: Promise<{
@@ -33,13 +35,24 @@ export default async function ListingDetail({
   const user = await getCurrentUser();
   const requestIntent = getSingleParam(query.request) === "1";
   const requestPath = `/listings/${listing.slug}?request=1`;
+
+  if (requestIntent && !user) {
+    redirect(`/login?next=${encodeURIComponent(requestPath)}`);
+  }
+
+  const showRequestForm = requestIntent && Boolean(user);
   const ctaHref = user
     ? requestPath
     : `/login?next=${encodeURIComponent(requestPath)}`;
   const audience = formatAudienceSize(listing.audienceSize);
+  const requestAction = createAdvertisementRequest.bind(null, listing.slug);
 
   return (
-    <main className="min-h-screen bg-white pb-36 text-neutral-950 lg:pb-0">
+    <main
+      className={`min-h-screen bg-white text-neutral-950 ${
+        showRequestForm ? "pb-10" : "pb-36 lg:pb-0"
+      }`}
+    >
       <header className="border-b border-neutral-200">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link className="text-lg font-semibold tracking-tight" href="/">
@@ -138,7 +151,13 @@ export default async function ListingDetail({
           </section>
 
           <aside>
-            <RequestCta href={ctaHref} requestIntent={requestIntent} />
+            {showRequestForm ? (
+              <div className="lg:sticky lg:top-6">
+                <RequestForm action={requestAction} />
+              </div>
+            ) : (
+              <RequestCta href={ctaHref} requestIntent={false} />
+            )}
           </aside>
         </div>
       </div>

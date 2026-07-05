@@ -6,14 +6,25 @@ describe("sanitizeNextPath", () => {
     expect(sanitizeNextPath("/listings/sample?request=1")).toBe(
       "/listings/sample?request=1",
     );
+    expect(sanitizeNextPath("/listings/sample?request=1#form")).toBe(
+      "/listings/sample?request=1#form",
+    );
   });
 
   it("rejects protocol-relative URLs", () => {
     expect(sanitizeNextPath("//evil.com")).toBe("/");
+    expect(sanitizeNextPath("%252F%252Fevil.com")).toBe("/");
   });
 
   it("rejects external URLs", () => {
     expect(sanitizeNextPath("https://evil.com/listings/sample")).toBe("/");
+    expect(sanitizeNextPath("https%253A%252F%252Fevil.com")).toBe("/");
+  });
+
+  it("rejects backslash redirect bypasses", () => {
+    expect(sanitizeNextPath("/\\evil.com")).toBe("/");
+    expect(sanitizeNextPath("/%5Cevil.com")).toBe("/");
+    expect(sanitizeNextPath("/\\/evil.com")).toBe("/");
   });
 
   it("falls back to root for invalid next values", () => {

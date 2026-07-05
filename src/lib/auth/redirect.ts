@@ -1,4 +1,5 @@
 const fallbackPath = "/";
+const internalOrigin = "https://pyda.local";
 
 export function sanitizeNextPath(value: string | string[] | null | undefined) {
   const candidate = Array.isArray(value) ? value[0] : value;
@@ -8,22 +9,40 @@ export function sanitizeNextPath(value: string | string[] | null | undefined) {
   }
 
   try {
-    const decoded = decodeURIComponent(candidate);
+    const decoded = decodeRepeatedly(candidate);
 
-    if (!decoded.startsWith("/") || decoded.startsWith("//")) {
+    if (decoded.includes("\\")) {
       return fallbackPath;
     }
 
-    if (hasProtocol(decoded)) {
+    const parsed = new URL(decoded, internalOrigin);
+
+    if (
+      parsed.origin !== internalOrigin ||
+      !decoded.startsWith("/") ||
+      decoded.startsWith("//")
+    ) {
       return fallbackPath;
     }
 
-    return decoded;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return fallbackPath;
   }
 }
 
-function hasProtocol(value: string) {
-  return /^[a-z][a-z0-9+.-]*:/i.test(value);
+function decodeRepeatedly(value: string) {
+  let current = value;
+
+  for (let index = 0; index < 5; index += 1) {
+    const decoded = decodeURIComponent(current);
+
+    if (decoded === current) {
+      return decoded;
+    }
+
+    current = decoded;
+  }
+
+  return current;
 }
