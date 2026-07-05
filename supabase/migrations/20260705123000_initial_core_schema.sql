@@ -174,7 +174,9 @@ create table public.payments (
   constraint payments_status_allowed check (
     status in ('ready', 'paid', 'failed', 'cancelled', 'refunded', 'settled')
   ),
-  constraint payments_paid_status_requires_paid_at check (status <> 'paid' or paid_at is not null),
+  constraint payments_paid_status_requires_paid_at check (
+    status not in ('paid', 'refunded', 'settled') or paid_at is not null
+  ),
   constraint payments_settled_status_requires_settled_at check (
     status <> 'settled' or settled_at is not null
   ),
@@ -329,8 +331,10 @@ as $$
   select exists (
     select 1
     from public.listings
+    inner join public.creators on creators.id = listings.creator_id
     where listings.id = target_listing_id
       and listings.status = 'published'
+      and creators.status = 'published'
   );
 $$;
 
@@ -472,7 +476,15 @@ create policy "Admins can update creators"
 create policy "Anyone can read published listings"
   on public.listings for select
   to anon, authenticated
-  using (status = 'published');
+  using (
+    status = 'published'
+    and exists (
+      select 1
+      from public.creators
+      where creators.id = listings.creator_id
+        and creators.status = 'published'
+    )
+  );
 
 create policy "Creators can read their own listings"
   on public.listings for select
@@ -556,10 +568,26 @@ create policy "Admins can update payments"
 
 grant usage on schema public to anon, authenticated, service_role;
 
-grant select on public.creators, public.listings to anon;
+revoke all privileges on table public.creators from anon, authenticated;
+
+grant select (
+  id,
+  slug,
+  display_name,
+  bio,
+  avatar_path,
+  social_links,
+  status,
+  is_sample,
+  is_founding,
+  created_at,
+  updated_at
+) on public.creators to anon, authenticated;
+
+grant select on public.listings to anon;
 
 grant select, insert, update on public.profiles to authenticated;
-grant select, insert, update on public.creators to authenticated;
+grant insert, update on public.creators to authenticated;
 grant select, insert, update on public.listings to authenticated;
 grant select, insert, update on public.requests to authenticated;
 grant select, insert, update on public.payments to authenticated;

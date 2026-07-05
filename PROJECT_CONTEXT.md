@@ -133,7 +133,7 @@ Implemented:
 - pnpm package management
 - Tailwind CSS and shadcn/ui-ready structure
 - Supabase browser/server client scaffolding
-- Supabase core database migration for `profiles`, `creators`, `listings`, `requests`, and `payments`
+- Supabase core database migration for `profiles`, `creators`, `listings`, `requests`, and `payments`, including initial DB security hardening
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
 - Cloudflare Workers deployment scaffolding through OpenNext
 - Minimal lint, type-check, and unit test setup
