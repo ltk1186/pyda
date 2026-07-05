@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Jeju coastline sample</title>
+  <desc id="desc">A grayscale coastline placeholder for a sample travel campaign.</desc>
+  <rect width="800" height="1000" fill="#fafafa"/>
+  <path d="M0 650c160-90 280-80 420-20 120 50 220 42 380-42v412H0z" fill="#d4d4d4"/>
+  <path d="M0 720c180-45 320-20 470 45 110 48 205 44 330-20v255H0z" fill="#a3a3a3"/>
+  <circle cx="610" cy="210" r="74" fill="#e5e5e5"/>
+  <text x="80" y="140" fill="#262626" font-family="Arial, sans-serif" font-size="42" font-weight="700">30s Mention</text>
+</svg>

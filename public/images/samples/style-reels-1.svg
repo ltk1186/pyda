@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Fashion reels sample</title>
+  <desc id="desc">A neutral fashion reels placeholder image.</desc>
+  <rect width="800" height="1000" fill="#fafafa"/>
+  <rect x="170" y="120" width="460" height="760" rx="230" fill="#e5e5e5"/>
+  <path d="M330 280h140l70 410H260z" fill="#a3a3a3"/>
+  <text x="90" y="900" fill="#262626" font-family="Arial, sans-serif" font-size="42" font-weight="700">Instagram Reels</text>
+</svg>

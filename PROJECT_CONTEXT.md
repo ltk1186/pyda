@@ -134,6 +134,8 @@ Implemented:
 - Tailwind CSS and shadcn/ui-ready structure
 - Supabase browser/server client scaffolding
 - Supabase core database migration for `profiles`, `creators`, `listings`, `requests`, and `payments`, including initial DB security hardening
+- Idempotent sample seed data for published sample creators and listings
+- Public marketplace first slice: home listing grid, platform filter, listing cards, and listing detail pages
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
 - Cloudflare Workers deployment scaffolding through OpenNext
 - Minimal lint, type-check, and unit test setup
@@ -141,7 +143,7 @@ Implemented:
 Not implemented yet:
 
 - Login
-- Product marketplace UI
+- Real creator/listing data management
 - Creator flows
 - Admin console
 - Payments

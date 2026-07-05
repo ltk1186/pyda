@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Jeju review sample</title>
+  <desc id="desc">A neutral placeholder for a dedicated local brand review video.</desc>
+  <rect width="800" height="1000" fill="#f7f7f7"/>
+  <rect x="90" y="130" width="620" height="470" rx="24" fill="#d4d4d4"/>
+  <rect x="130" y="650" width="420" height="38" rx="19" fill="#262626"/>
+  <rect x="130" y="710" width="540" height="28" rx="14" fill="#a3a3a3"/>
+  <rect x="130" y="760" width="360" height="28" rx="14" fill="#d4d4d4"/>
+</svg>

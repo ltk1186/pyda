@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Jeju travel YouTube ad sample</title>
+  <desc id="desc">A neutral image placeholder for a Jeju travel video advertising listing.</desc>
+  <rect width="800" height="1000" fill="#f5f5f5"/>
+  <rect x="80" y="120" width="640" height="760" rx="28" fill="#e5e5e5"/>
+  <path d="M120 700l160-180 120 130 100-90 180 190v90H120z" fill="#a3a3a3"/>
+  <circle cx="570" cy="250" r="70" fill="#d4d4d4"/>
+  <text x="120" y="170" fill="#262626" font-family="Arial, sans-serif" font-size="42" font-weight="700">YouTube</text>
+  <text x="120" y="225" fill="#525252" font-family="Arial, sans-serif" font-size="30">Jeju Travel</text>
+</svg>

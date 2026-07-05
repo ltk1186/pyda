@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Instagram story sample</title>
+  <desc id="desc">A neutral three-frame story placeholder.</desc>
+  <rect width="800" height="1000" fill="#fafafa"/>
+  <rect x="110" y="160" width="180" height="680" rx="24" fill="#e5e5e5"/>
+  <rect x="310" y="160" width="180" height="680" rx="24" fill="#d4d4d4"/>
+  <rect x="510" y="160" width="180" height="680" rx="24" fill="#a3a3a3"/>
+</svg>

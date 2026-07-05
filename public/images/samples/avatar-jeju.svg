@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">Sample creator avatar</title>
+  <desc id="desc">Neutral placeholder avatar for a sample Jeju travel creator.</desc>
+  <rect width="240" height="240" rx="120" fill="#f5f5f5"/>
+  <circle cx="120" cy="92" r="44" fill="#d4d4d4"/>
+  <path d="M48 212c15-45 48-68 72-68s57 23 72 68" fill="#a3a3a3"/>
+</svg>

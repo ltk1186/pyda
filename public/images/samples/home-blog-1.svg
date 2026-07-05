@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Home blog review sample</title>
+  <desc id="desc">A neutral home product blog review placeholder.</desc>
+  <rect width="800" height="1000" fill="#f7f7f7"/>
+  <rect x="120" y="170" width="560" height="360" rx="18" fill="#d4d4d4"/>
+  <rect x="120" y="590" width="480" height="34" rx="17" fill="#262626"/>
+  <rect x="120" y="650" width="560" height="24" rx="12" fill="#a3a3a3"/>
+  <rect x="120" y="700" width="440" height="24" rx="12" fill="#d4d4d4"/>
+</svg>

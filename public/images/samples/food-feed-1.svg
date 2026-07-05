@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Restaurant Instagram feed sample</title>
+  <desc id="desc">A neutral restaurant feed placeholder.</desc>
+  <rect width="800" height="1000" fill="#f7f7f7"/>
+  <rect x="100" y="130" width="600" height="600" rx="28" fill="#d4d4d4"/>
+  <rect x="140" y="790" width="520" height="36" rx="18" fill="#262626"/>
+  <rect x="140" y="850" width="360" height="26" rx="13" fill="#a3a3a3"/>
+</svg>
