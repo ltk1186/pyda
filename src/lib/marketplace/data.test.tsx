@@ -2,7 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import Home from "@/app/page";
 import { ListingCard } from "@/components/marketplace/listing-card";
-import { filterListings, getPublicListings } from "./data";
+import { shouldShowSampleBadge } from "./badges";
+import { filterListings, getPublicListings, usesLocalSampleData } from "./data";
 import { sampleListings } from "./sample-data";
 
 describe("marketplace public data", () => {
@@ -31,6 +32,22 @@ describe("marketplace public data", () => {
       true,
     );
   });
+
+  it("uses local sample data only when Supabase env is missing", () => {
+    const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const previousKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    expect(usesLocalSampleData()).toBe(true);
+
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "publishable-key";
+    expect(usesLocalSampleData()).toBe(false);
+
+    restoreEnv("NEXT_PUBLIC_SUPABASE_URL", previousUrl);
+    restoreEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", previousKey);
+  });
 });
 
 function restoreEnv(key: string, value: string | undefined) {
@@ -55,6 +72,19 @@ describe("marketplace rendering", () => {
     expect(html).toContain("영상 내 30초 소개");
     expect(html).toContain("제주 여행 영상 내 30초 브랜드 소개");
     expect(html).toContain("₩500,000");
+  });
+
+  it("shows sample badges only for sample listings", () => {
+    expect(shouldShowSampleBadge({ isSample: true })).toBe(true);
+    expect(shouldShowSampleBadge({ isSample: false })).toBe(false);
+
+    const realListing = {
+      ...sampleListings[0],
+      isSample: false,
+    };
+    const html = renderToStaticMarkup(<ListingCard listing={realListing} />);
+
+    expect(html).not.toContain("예시 광고 상품");
   });
 
   it("renders the public home with platform filter and listing grid content", async () => {

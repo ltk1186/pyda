@@ -43,65 +43,52 @@ const publicListingSelect = `
 `;
 
 export async function getPublicListings(platform: PlatformFilter) {
-  const fallback = filterListings(sampleListings, platform);
-
-  if (!hasSupabaseEnv()) {
-    return fallback;
+  if (usesLocalSampleData()) {
+    return filterListings(sampleListings, platform);
   }
 
-  try {
-    const supabase = await createClient();
-    let query = supabase
-      .from("listings")
-      .select(publicListingSelect)
-      .eq("status", "published")
-      .eq("creators.status", "published")
-      .order("created_at", { ascending: false });
+  const supabase = await createClient();
+  let query = supabase
+    .from("listings")
+    .select(publicListingSelect)
+    .eq("status", "published")
+    .eq("creators.status", "published")
+    .order("created_at", { ascending: false });
 
-    if (platform !== "전체") {
-      query = query.eq("platform", platform);
-    }
-
-    const { data, error } = await query;
-
-    if (error || !data) {
-      return fallback;
-    }
-
-    return data
-      .map((row) => mapListingRow(row as ListingRow))
-      .filter((listing): listing is PublicListing => listing !== null);
-  } catch {
-    return fallback;
+  if (platform !== "전체") {
+    query = query.eq("platform", platform);
   }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to load public listings: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((row) => mapListingRow(row as ListingRow))
+    .filter((listing): listing is PublicListing => listing !== null);
 }
 
 export async function getPublicListingBySlug(slug: string) {
-  const fallback =
-    sampleListings.find((listing) => listing.slug === slug) ?? null;
-
-  if (!hasSupabaseEnv()) {
-    return fallback;
+  if (usesLocalSampleData()) {
+    return sampleListings.find((listing) => listing.slug === slug) ?? null;
   }
 
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("listings")
-      .select(publicListingSelect)
-      .eq("slug", slug)
-      .eq("status", "published")
-      .eq("creators.status", "published")
-      .maybeSingle();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("listings")
+    .select(publicListingSelect)
+    .eq("slug", slug)
+    .eq("status", "published")
+    .eq("creators.status", "published")
+    .maybeSingle();
 
-    if (error || !data) {
-      return fallback;
-    }
-
-    return mapListingRow(data as ListingRow) ?? fallback;
-  } catch {
-    return fallback;
+  if (error) {
+    throw new Error(`Failed to load public listing: ${error.message}`);
   }
+
+  return data ? mapListingRow(data as ListingRow) : null;
 }
 
 export function filterListings(
@@ -166,11 +153,11 @@ function mapCreatorRow(row: CreatorRow): PublicCreator {
   };
 }
 
-function hasSupabaseEnv() {
+export function usesLocalSampleData() {
   try {
     readSupabasePublicEnv();
-    return true;
-  } catch {
     return false;
+  } catch {
+    return true;
   }
 }

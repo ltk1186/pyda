@@ -136,13 +136,16 @@ Implemented:
 - Supabase core database migration for `profiles`, `creators`, `listings`, `requests`, and `payments`, including initial DB security hardening
 - Idempotent sample seed data for published sample creators and listings
 - Public marketplace first slice: home listing grid, platform filter, listing cards, and listing detail pages
+- Public marketplace hardening for DB-backed data source behavior and URL-based request intent
+- Late-login OAuth scaffold for Google and Kakao through Supabase Auth
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
 - Cloudflare Workers deployment scaffolding through OpenNext
 - Minimal lint, type-check, and unit test setup
 
 Not implemented yet:
 
-- Login
+- Actual OAuth provider configuration in Supabase
+- Advertisement request form and request creation
 - Real creator/listing data management
 - Creator flows
 - Admin console

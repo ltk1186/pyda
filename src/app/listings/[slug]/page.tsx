@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ListingGallery } from "@/components/marketplace/listing-gallery";
 import { RequestCta } from "@/components/marketplace/request-cta";
 import { SampleBadge } from "@/components/marketplace/sample-badge";
+import { getCurrentUser } from "@/lib/auth/session";
+import { shouldShowSampleBadge } from "@/lib/marketplace/badges";
 import { getPublicListingBySlug } from "@/lib/marketplace/data";
 import { formatAudienceSize, formatKrw } from "@/lib/marketplace/format";
 
@@ -11,20 +13,33 @@ type ListingDetailProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams: Promise<{
+    request?: string | string[];
+  }>;
 };
 
-export default async function ListingDetail({ params }: ListingDetailProps) {
+export default async function ListingDetail({
+  params,
+  searchParams,
+}: ListingDetailProps) {
   const { slug } = await params;
+  const query = await searchParams;
   const listing = await getPublicListingBySlug(slug);
 
   if (!listing) {
     notFound();
   }
 
+  const user = await getCurrentUser();
+  const requestIntent = getSingleParam(query.request) === "1";
+  const requestPath = `/listings/${listing.slug}?request=1`;
+  const ctaHref = user
+    ? requestPath
+    : `/login?next=${encodeURIComponent(requestPath)}`;
   const audience = formatAudienceSize(listing.audienceSize);
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="min-h-screen bg-white pb-36 text-neutral-950 lg:pb-0">
       <header className="border-b border-neutral-200">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link className="text-lg font-semibold tracking-tight" href="/">
@@ -41,9 +56,9 @@ export default async function ListingDetail({ params }: ListingDetailProps) {
 
         <div className="grid gap-10 py-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section className="min-w-0">
-            <SampleBadge />
+            {shouldShowSampleBadge(listing) ? <SampleBadge /> : null}
 
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight">
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-balance">
               {listing.title}
             </h1>
 
@@ -123,10 +138,14 @@ export default async function ListingDetail({ params }: ListingDetailProps) {
           </section>
 
           <aside>
-            <RequestCta />
+            <RequestCta href={ctaHref} requestIntent={requestIntent} />
           </aside>
         </div>
       </div>
     </main>
   );
+}
+
+function getSingleParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

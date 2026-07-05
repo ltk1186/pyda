@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { shouldShowSampleBadge } from "@/lib/marketplace/badges";
 import { formatKrw } from "@/lib/marketplace/format";
 import type { PublicListing } from "@/lib/marketplace/types";
 
@@ -25,7 +26,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
           unoptimized
         />
-        {listing.isSample ? (
+        {shouldShowSampleBadge(listing) ? (
           <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[11px] font-medium text-neutral-800 ring-1 ring-neutral-200">
             예시 광고 상품
           </span>
