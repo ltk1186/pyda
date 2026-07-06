@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await signInWithKakaoIdToken(supabase.auth, {
       idToken: tokenResult.idToken,
+      accessToken: tokenResult.accessToken,
       nonce,
     });
 

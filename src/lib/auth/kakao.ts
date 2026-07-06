@@ -28,6 +28,7 @@ export type KakaoTokenExchangeResult =
   | {
       status: "success";
       idToken: string;
+      accessToken: string;
     }
   | {
       status: "error";
@@ -36,7 +37,12 @@ export type KakaoTokenExchangeResult =
     }
   | {
       status: "error";
-      reason: "invalid_json" | "missing_id_token" | "network" | "timeout";
+      reason:
+        | "invalid_json"
+        | "missing_id_token"
+        | "missing_access_token"
+        | "network"
+        | "timeout";
     };
 
 type KakaoTokenExchangeInput = {
@@ -50,6 +56,7 @@ type KakaoSignInAuth = {
   signInWithIdToken(credentials: {
     provider: "kakao";
     token: string;
+    access_token: string;
     nonce: string;
   }): Promise<{ error: unknown }>;
 };
@@ -57,6 +64,7 @@ type KakaoSignInAuth = {
 export type SupabaseAuthErrorDiagnostic = {
   code: string | null;
   category: "auth_error" | "unknown_error";
+  message: string | null;
 };
 
 export function readKakaoOAuthConfig(
@@ -166,11 +174,13 @@ export function isValidKakaoCallbackState(input: {
 
 export function buildKakaoIdTokenCredentials(input: {
   idToken: string;
+  accessToken: string;
   nonce: string;
 }) {
   return {
     provider: "kakao" as const,
     token: input.idToken,
+    access_token: input.accessToken,
     nonce: input.nonce,
   };
 }
@@ -179,6 +189,7 @@ export async function signInWithKakaoIdToken(
   auth: KakaoSignInAuth,
   input: {
     idToken: string;
+    accessToken: string;
     nonce: string;
   },
 ) {
@@ -229,16 +240,19 @@ export async function exchangeKakaoAuthorizationCode({
       };
     }
 
-    if (!isKakaoTokenResponse(json)) {
+    const tokenValidation = validateKakaoTokenResponse(json);
+
+    if (tokenValidation.status !== "success") {
       return {
         status: "error",
-        reason: "missing_id_token",
+        reason: tokenValidation.status,
       };
     }
 
     return {
       status: "success",
-      idToken: json.id_token,
+      idToken: tokenValidation.idToken,
+      accessToken: tokenValidation.accessToken,
     };
   } catch (error) {
     return {
@@ -256,17 +270,44 @@ export function getSupabaseAuthErrorDiagnostic(
   return {
     code: getStringProperty(error, "code"),
     category: isObjectLike(error) ? "auth_error" : "unknown_error",
+    message: getStringProperty(error, "message"),
   };
 }
 
-function isKakaoTokenResponse(value: unknown): value is { id_token: string } {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "id_token" in value &&
-    typeof value.id_token === "string" &&
-    value.id_token.length > 0
-  );
+type KakaoTokenValidationResult =
+  | {
+      status: "success";
+      idToken: string;
+      accessToken: string;
+    }
+  | {
+      status: "missing_id_token" | "missing_access_token";
+    };
+
+function validateKakaoTokenResponse(
+  value: unknown,
+): KakaoTokenValidationResult {
+  if (!isObjectLike(value)) {
+    return { status: "missing_id_token" };
+  }
+
+  const idToken = value.id_token;
+
+  if (typeof idToken !== "string" || idToken.length === 0) {
+    return { status: "missing_id_token" };
+  }
+
+  const accessToken = value.access_token;
+
+  if (typeof accessToken !== "string" || accessToken.length === 0) {
+    return { status: "missing_access_token" };
+  }
+
+  return {
+    status: "success",
+    idToken,
+    accessToken,
+  };
 }
 
 function isAbortError(error: unknown) {

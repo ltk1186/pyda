@@ -116,11 +116,13 @@ describe("Kakao callback", () => {
     expect(
       buildKakaoIdTokenCredentials({
         idToken: "id-token",
+        accessToken: "access-token",
         nonce: "nonce",
       }),
     ).toEqual({
       provider: "kakao",
       token: "id-token",
+      access_token: "access-token",
       nonce: "nonce",
     });
   });
@@ -133,6 +135,7 @@ describe("Kakao callback", () => {
     await expect(
       signInWithKakaoIdToken(auth, {
         idToken: "id-token",
+        accessToken: "access-token",
         nonce: "nonce",
       }),
     ).resolves.toEqual({ error: null });
@@ -140,21 +143,26 @@ describe("Kakao callback", () => {
     expect(auth.signInWithIdToken).toHaveBeenCalledWith({
       provider: "kakao",
       token: "id-token",
+      access_token: "access-token",
       nonce: "nonce",
     });
   });
 
-  it("keeps Supabase auth diagnostics to code and category only", () => {
-    expect(
-      getSupabaseAuthErrorDiagnostic({
-        code: "bad_jwt",
-        message: "could contain sensitive context",
-        token: "secret-token",
-      }),
-    ).toEqual({
+  it("keeps Supabase auth diagnostics to safe string fields only", () => {
+    const diagnostic = getSupabaseAuthErrorDiagnostic({
+      code: "bad_jwt",
+      message: "safe message",
+      token: "secret-token",
+      access_token: "secret-access-token",
+    });
+
+    expect(diagnostic).toEqual({
       code: "bad_jwt",
       category: "auth_error",
+      message: "safe message",
     });
+    expect(JSON.stringify(diagnostic)).not.toContain("secret-token");
+    expect(JSON.stringify(diagnostic)).not.toContain("secret-access-token");
   });
 });
 
@@ -193,6 +201,17 @@ describe("Kakao token exchange", () => {
     ).resolves.toEqual({ status: "error", reason: "missing_id_token" });
   });
 
+  it("returns error when access_token is missing", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ id_token: "id-token" }),
+    });
+
+    await expect(
+      exchangeKakaoAuthorizationCode({ code: "code", config, fetchImpl }),
+    ).resolves.toEqual({ status: "error", reason: "missing_access_token" });
+  });
+
   it("returns error for network failures", async () => {
     const fetchImpl = vi.fn().mockRejectedValue(new Error("network failed"));
 
@@ -211,15 +230,24 @@ describe("Kakao token exchange", () => {
     ).resolves.toEqual({ status: "error", reason: "timeout" });
   });
 
-  it("returns id_token and posts the required form fields", async () => {
+  it("returns id_token, access_token, and posts the required form fields", async () => {
     const fetchImpl = vi.fn().mockResolvedValue({
       ok: true,
-      json: vi.fn().mockResolvedValue({ id_token: "id-token" }),
+      json: vi
+        .fn()
+        .mockResolvedValue({
+          id_token: "id-token",
+          access_token: "access-token",
+        }),
     });
 
     await expect(
       exchangeKakaoAuthorizationCode({ code: "code", config, fetchImpl }),
-    ).resolves.toEqual({ status: "success", idToken: "id-token" });
+    ).resolves.toEqual({
+      status: "success",
+      idToken: "id-token",
+      accessToken: "access-token",
+    });
 
     const [, init] = fetchImpl.mock.calls[0];
     expect(init.method).toBe("POST");
