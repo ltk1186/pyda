@@ -5,6 +5,11 @@ import {
   getExtensionForMimeType,
   validateImageFile,
 } from "@/lib/admin/listing-core";
+import {
+  buildAvatarStorageObjectPath,
+  getAvatarExtensionForMimeType,
+  validateAvatarFile,
+} from "@/lib/creator/core";
 import { publicMediaBucket } from "@/lib/images";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -84,4 +89,52 @@ export async function cleanupStorageObjects(paths: string[]) {
 
   const supabase = createAdminClient();
   await supabase.storage.from(publicMediaBucket).remove(storagePaths);
+}
+
+export async function uploadAvatarImage(params: {
+  creatorId: string;
+  file: File;
+}) {
+  const validationError = validateAvatarFile(params.file);
+
+  if (validationError) {
+    return {
+      ok: false as const,
+      message: validationError,
+    };
+  }
+
+  const extension = getAvatarExtensionForMimeType(params.file.type);
+
+  if (!extension) {
+    return {
+      ok: false as const,
+      message: "지원하지 않는 이미지 형식입니다.",
+    };
+  }
+
+  const path = buildAvatarStorageObjectPath({
+    creatorId: params.creatorId,
+    extension,
+    randomId: crypto.randomUUID(),
+  });
+  const supabase = createAdminClient();
+  const { error } = await supabase.storage
+    .from(publicMediaBucket)
+    .upload(path, params.file, {
+      contentType: params.file.type,
+      upsert: false,
+    });
+
+  if (error) {
+    return {
+      ok: false as const,
+      message: "아바타 이미지를 업로드하지 못했습니다.",
+    };
+  }
+
+  return {
+    ok: true as const,
+    path,
+  };
 }
