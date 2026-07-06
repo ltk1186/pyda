@@ -20,12 +20,16 @@ export default async function NewCreatorListingPage() {
         새 광고 상품
       </h1>
       {creator ? (
-        <div className="mt-6">
-          <CreatorListingForm
-            action={createCreatorListing}
-            submitLabel="광고 상품 생성"
-          />
-        </div>
+        creator.status === "archived" ? (
+          <ArchivedNotice />
+        ) : (
+          <div className="mt-6">
+            <CreatorListingForm
+              action={createCreatorListing}
+              submitLabel="광고 상품 생성"
+            />
+          </div>
+        )
       ) : (
         <div className="mt-6 rounded-lg border border-neutral-200 p-6">
           <p className="text-sm text-neutral-600">
@@ -34,5 +38,16 @@ export default async function NewCreatorListingPage() {
         </div>
       )}
     </section>
+  );
+}
+
+function ArchivedNotice() {
+  return (
+    <div className="mt-6 rounded-lg border border-neutral-200 p-6">
+      <p className="text-sm text-neutral-600">
+        현재 크리에이터 프로필은 보관 상태입니다. 관리가 필요한 경우 Pyda에
+        문의해주세요.
+      </p>
+    </div>
   );
 }

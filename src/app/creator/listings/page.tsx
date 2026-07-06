@@ -25,18 +25,27 @@ export default async function CreatorListingsPage() {
   }
 
   const listings = await getCreatorListings(creator.id);
+  const isArchived = creator.status === "archived";
 
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">내 광고 상품</h1>
-        <Link
-          className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-          href="/creator/listings/new"
-        >
-          새 광고 상품 추가
-        </Link>
+        {!isArchived ? (
+          <Link
+            className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+            href="/creator/listings/new"
+          >
+            새 광고 상품 추가
+          </Link>
+        ) : null}
       </div>
+      {isArchived ? (
+        <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-700">
+          현재 크리에이터 프로필은 보관 상태입니다. 관리가 필요한 경우 Pyda에
+          문의해주세요.
+        </p>
+      ) : null}
 
       <div className="mt-6 overflow-hidden rounded-lg border border-neutral-200">
         {listings.length > 0 ? (
@@ -71,12 +80,18 @@ export default async function CreatorListingsPage() {
                     {formatListingStatus(listing.status)}
                   </p>
                 </div>
-                <Link
-                  className="self-center rounded-md border border-neutral-300 px-3 py-2 text-center text-sm font-medium hover:bg-neutral-50"
-                  href={`/creator/listings/${listing.id}/edit`}
-                >
-                  수정
-                </Link>
+                {isArchived ? (
+                  <span className="self-center rounded-md border border-neutral-200 px-3 py-2 text-center text-sm text-neutral-400">
+                    수정 불가
+                  </span>
+                ) : (
+                  <Link
+                    className="self-center rounded-md border border-neutral-300 px-3 py-2 text-center text-sm font-medium hover:bg-neutral-50"
+                    href={`/creator/listings/${listing.id}/edit`}
+                  >
+                    수정
+                  </Link>
+                )}
               </article>
             ))}
           </div>

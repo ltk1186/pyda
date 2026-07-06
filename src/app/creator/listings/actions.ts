@@ -15,6 +15,7 @@ import { cleanupStorageObjects, uploadListingImages } from "@/lib/admin/storage"
 import {
   buildCreatorListingInsertPayload,
   buildCreatorListingUpdatePayload,
+  creatorSelfManageBlockedMessage,
   validateCreatorListingBase,
   type CreatorListingFormErrors,
 } from "@/lib/creator/core";
@@ -38,6 +39,12 @@ export async function createCreatorListing(
 
   if (!creator) {
     return { message: "연결된 크리에이터 프로필이 없습니다." };
+  }
+
+  const blockedMessage = creatorSelfManageBlockedMessage(creator.status);
+
+  if (blockedMessage) {
+    return { message: blockedMessage };
   }
 
   const files = getImageFiles(formData);
@@ -127,6 +134,12 @@ export async function updateCreatorListing(
 
   if (!creator) {
     return { message: "연결된 크리에이터 프로필이 없습니다." };
+  }
+
+  const blockedMessage = creatorSelfManageBlockedMessage(creator.status);
+
+  if (blockedMessage) {
+    return { message: blockedMessage };
   }
 
   const current = await getCreatorListingById({

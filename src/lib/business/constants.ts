@@ -1,0 +1,2 @@
+export const STANDARD_PLATFORM_FEE_BPS = 1500;
+export const FOUNDING_BENEFIT_BPS = 500;

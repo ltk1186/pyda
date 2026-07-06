@@ -29,6 +29,8 @@ export type AdminCreatorDetail = AdminCreatorSummary & {
   onboardedAt: string | null;
   claimedAt: string | null;
   foundingGrantedAt: string | null;
+  publishedListingSlugs: string[];
+  effectivePublicListingCount: number;
   updatedAt: string;
 };
 
@@ -52,6 +54,8 @@ type AdminCreatorRow = {
     | Array<{
         id: string;
         platform: string | null;
+        slug: string | null;
+        status: string | null;
       }>
     | null;
 };
@@ -74,7 +78,9 @@ const adminCreatorSelect = `
   updated_at,
   listings (
     id,
-    platform
+    platform,
+    slug,
+    status
   )
 `;
 
@@ -134,12 +140,20 @@ function mapAdminCreator(row: AdminCreatorRow): AdminCreatorSummary {
 }
 
 function mapAdminCreatorDetail(row: AdminCreatorRow): AdminCreatorDetail {
+  const listings = row.listings ?? [];
+  const publishedListingSlugs = listings
+    .filter((listing) => listing.status === "published")
+    .flatMap((listing) => (listing.slug ? [listing.slug] : []));
+
   return {
     ...mapAdminCreator(row),
     ownerUserId: row.owner_user_id,
     onboardedAt: row.onboarded_at ?? null,
     claimedAt: row.claimed_at ?? null,
     foundingGrantedAt: row.founding_granted_at ?? null,
+    publishedListingSlugs,
+    effectivePublicListingCount:
+      row.status === "published" ? publishedListingSlugs.length : 0,
     updatedAt: row.updated_at ?? row.created_at,
   };
 }

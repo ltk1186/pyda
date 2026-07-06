@@ -32,6 +32,28 @@ export default async function EditCreatorListingPage({
     );
   }
 
+  if (creator.status === "archived") {
+    return (
+      <section>
+        <Link
+          className="text-sm text-neutral-600 hover:text-neutral-950"
+          href="/creator/listings"
+        >
+          내 광고 상품
+        </Link>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight">
+          광고 상품 수정
+        </h1>
+        <div className="mt-6 rounded-lg border border-neutral-200 p-6">
+          <p className="text-sm text-neutral-600">
+            현재 크리에이터 프로필은 보관 상태입니다. 관리가 필요한 경우
+            Pyda에 문의해주세요.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   const listing = await getCreatorListingById({
     creatorId: creator.id,
     listingId: id,

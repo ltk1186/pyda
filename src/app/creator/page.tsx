@@ -2,12 +2,15 @@ import Link from "next/link";
 import { OnboardingCompleteForm } from "@/components/creator/onboarding-complete-form";
 import { formatRequestDate } from "@/lib/requests";
 import { requireOwnedCreator } from "@/lib/creator/owner";
+import { readFoundingProgramConfig } from "@/lib/founding/config";
 import { completeCreatorOnboarding } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function CreatorPage() {
   const creator = await requireOwnedCreator("/creator");
+  const foundingProgram = readFoundingProgramConfig();
+  const isArchived = creator?.status === "archived";
 
   return (
     <section>
@@ -21,24 +24,34 @@ export default async function CreatorPage() {
             <h2 className="mt-2 text-xl font-semibold">
               안녕하세요, {creator.displayName}님
             </h2>
+            {isArchived ? (
+              <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-700">
+                현재 크리에이터 프로필은 보관 상태입니다. 관리가 필요한 경우
+                Pyda에 문의해주세요.
+              </p>
+            ) : null}
             <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-3">
               <Stat label="공개 상품" value={creator.publishedListingCount} />
               <Stat label="숨김 상품" value={creator.hiddenListingCount} />
               <Stat label="작성 중 상품" value={creator.draftListingCount} />
             </dl>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-                href="/creator/listings/new"
-              >
-                새 광고 상품 추가
-              </Link>
-              <Link
-                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold hover:bg-neutral-50"
-                href="/creator/profile"
-              >
-                프로필 수정
-              </Link>
+              {!isArchived ? (
+                <>
+                  <Link
+                    className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+                    href="/creator/listings/new"
+                  >
+                    새 광고 상품 추가
+                  </Link>
+                  <Link
+                    className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold hover:bg-neutral-50"
+                    href="/creator/profile"
+                  >
+                    프로필 수정
+                  </Link>
+                </>
+              ) : null}
               <Link
                 className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold hover:bg-neutral-50"
                 href="/creator/listings"
@@ -46,6 +59,28 @@ export default async function CreatorPage() {
                 내 광고 상품
               </Link>
             </div>
+          </section>
+
+          <section className="rounded-lg border border-neutral-200 p-6">
+            <h2 className="text-base font-semibold">Founding Creator</h2>
+            {creator.isFounding ? (
+              <div className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-700">
+                <p className="font-medium">Founding Creator</p>
+                {creator.foundingGrantedAt ? (
+                  <p className="mt-1">
+                    확정일 {formatRequestDate(creator.foundingGrantedAt)}
+                  </p>
+                ) : null}
+              </div>
+            ) : foundingProgram.configured && creator.onboardedAt ? (
+              <p className="mt-3 text-sm text-neutral-600">
+                Founding Creator 여부는 운영팀의 최종 확인 후 확정됩니다.
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-neutral-600">
+                Founding Creator 확정은 직접 온보딩 완료 후 운영팀이 확인합니다.
+              </p>
+            )}
           </section>
 
           <section className="rounded-lg border border-neutral-200 p-6">

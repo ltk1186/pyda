@@ -15,6 +15,13 @@ import {
   generateClaimToken,
   hashClaimToken,
 } from "@/lib/claim/core";
+import { readFoundingProgramConfig } from "@/lib/founding/config";
+import {
+  buildFoundingApprovalMatch,
+  buildFoundingApprovalPayload,
+  evaluateFoundingEligibility,
+  getEffectivePublicListingCount,
+} from "@/lib/founding/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AdminCreatorFormState = {
@@ -25,6 +32,11 @@ export type AdminCreatorFormState = {
 
 export type AdminClaimLinkState = {
   claimPath?: string;
+  message?: string;
+  ok?: boolean;
+};
+
+export type AdminFoundingApprovalState = {
   message?: string;
   ok?: boolean;
 };
@@ -160,6 +172,87 @@ export async function generateCreatorClaimLink(
     claimPath: `/claim/${rawToken}`,
     message: "온보딩 링크를 생성했습니다. 이 링크는 이번 한 번만 표시됩니다.",
   };
+}
+
+export async function approveFoundingCreator(
+  creatorId: string,
+  _state: AdminFoundingApprovalState,
+  _formData?: FormData,
+): Promise<AdminFoundingApprovalState> {
+  void _state;
+  void _formData;
+
+  await requireAdmin(`/admin/creators/${creatorId}`);
+
+  const supabase = createAdminClient();
+  const { data: creator, error: creatorError } = await supabase
+    .from("creators")
+    .select("id, status, is_sample, onboarded_at, is_founding")
+    .eq("id", creatorId)
+    .maybeSingle();
+
+  if (creatorError || !creator) {
+    return { message: "크리에이터를 찾지 못했습니다." };
+  }
+
+  const { data: listings, error: listingsError } = await supabase
+    .from("listings")
+    .select("slug, status")
+    .eq("creator_id", creatorId);
+
+  if (listingsError) {
+    return { message: "공개 광고 상품 상태를 확인하지 못했습니다." };
+  }
+
+  const publishedListingSlugs = (listings ?? [])
+    .filter((listing) => listing.status === "published")
+    .flatMap((listing) => (typeof listing.slug === "string" ? [listing.slug] : []));
+  const effectivePublicListingCount = getEffectivePublicListingCount({
+    creatorStatus: creator.status as string,
+    publishedListingCount: publishedListingSlugs.length,
+  });
+  const eligibility = evaluateFoundingEligibility({
+    program: readFoundingProgramConfig(),
+    onboardedAt: creator.onboarded_at as string | null,
+    creatorStatus: creator.status as string,
+    isSample: Boolean(creator.is_sample),
+    effectivePublicListingCount,
+    isFounding: Boolean(creator.is_founding),
+  });
+
+  if (eligibility.alreadyFounding) {
+    return { message: "이미 Founding Creator로 확정되었습니다." };
+  }
+
+  if (!eligibility.eligibleForApproval) {
+    return { message: "Founding Creator 확정 조건을 만족하지 못했습니다." };
+  }
+
+  const nowIso = new Date().toISOString();
+  const match = buildFoundingApprovalMatch({ creatorId });
+  const { data: updated, error } = await supabase
+    .from("creators")
+    .update(buildFoundingApprovalPayload({ nowIso }))
+    .eq("id", match.id)
+    .eq("is_founding", match.is_founding)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !updated) {
+    return {
+      message: "Founding Creator 상태가 이미 변경되었습니다. 새로고침 후 다시 확인해주세요.",
+    };
+  }
+
+  revalidateCreatorPaths(creatorId);
+  revalidatePath("/");
+  revalidatePath("/creator");
+
+  for (const slug of publishedListingSlugs) {
+    revalidatePath(`/listings/${slug}`);
+  }
+
+  return { ok: true, message: "Founding Creator로 확정했습니다." };
 }
 
 function isDuplicateSlugError(error: { code?: string; message?: string }) {

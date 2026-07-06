@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   buildCreatorProfileUpdatePayload,
+  creatorSelfManageBlockedMessage,
   getPreviousStorageAvatarToCleanup,
   validateCreatorProfileForm,
   type CreatorProfileFormErrors,
@@ -27,6 +28,12 @@ export async function updateCreatorProfile(
 
   if (!creator) {
     return { message: "연결된 크리에이터 프로필이 없습니다." };
+  }
+
+  const blockedMessage = creatorSelfManageBlockedMessage(creator.status);
+
+  if (blockedMessage) {
+    return { message: blockedMessage };
   }
 
   const parsed = validateCreatorProfileForm({

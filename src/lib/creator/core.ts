@@ -230,6 +230,16 @@ export function canEditOwnedListing(input: {
   return input.ownerCreatorId === input.listingCreatorId;
 }
 
+export function canCreatorSelfManage(status: string) {
+  return status !== "archived";
+}
+
+export function creatorSelfManageBlockedMessage(status: string) {
+  return canCreatorSelfManage(status)
+    ? null
+    : "보관된 크리에이터는 자기 관리를 수정할 수 없습니다.";
+}
+
 export function canCompleteCreatorOnboarding(input: {
   creatorStatus: string;
   onboardedAt: string | null;

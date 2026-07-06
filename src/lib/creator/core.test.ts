@@ -5,8 +5,10 @@ import {
   buildCreatorListingUpdatePayload,
   buildCreatorProfileUpdatePayload,
   buildOnboardingCompletePayload,
+  canCreatorSelfManage,
   canCompleteCreatorOnboarding,
   canEditOwnedListing,
+  creatorSelfManageBlockedMessage,
   getPreviousStorageAvatarToCleanup,
   validateAvatarFile,
   validateCreatorListingBase,
@@ -36,6 +38,14 @@ describe("creator owner access helpers", () => {
 });
 
 describe("creator profile self-management", () => {
+  it("rejects archived creator self-management before mutation", () => {
+    expect(canCreatorSelfManage("archived")).toBe(false);
+    expect(canCreatorSelfManage("published")).toBe(true);
+    expect(creatorSelfManageBlockedMessage("archived")).toBe(
+      "보관된 크리에이터는 자기 관리를 수정할 수 없습니다.",
+    );
+  });
+
   it("builds profile update payload without protected fields or status", () => {
     const result = validateCreatorProfileForm({
       displayName: "김제주",
@@ -154,6 +164,12 @@ describe("creator listing self-management", () => {
         listingCreatorId: "creator-b",
       }),
     ).toBe(false);
+  });
+
+  it("keeps non-archived creator self-management available", () => {
+    expect(canCreatorSelfManage("draft")).toBe(true);
+    expect(canCreatorSelfManage("hidden")).toBe(true);
+    expect(canCreatorSelfManage("published")).toBe(true);
   });
 });
 

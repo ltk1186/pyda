@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  approveFoundingCreator,
   generateCreatorClaimLink,
   updateAdminCreator,
 } from "@/app/admin/creators/actions";
 import { ClaimLinkForm } from "@/components/admin/claim-link-form";
 import { AdminCreatorForm } from "@/components/admin/creator-form";
+import { FoundingApprovalForm } from "@/components/admin/founding-approval-form";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getAdminCreatorById } from "@/lib/admin/creators";
 import { formatCreatorStatus } from "@/lib/admin/creator-core";
+import { readFoundingProgramConfig } from "@/lib/founding/config";
+import { evaluateFoundingEligibility } from "@/lib/founding/core";
 import { formatRequestDate } from "@/lib/requests";
 
 type AdminCreatorDetailPageProps = {
@@ -29,6 +33,16 @@ export default async function AdminCreatorDetailPage({
   if (!creator) {
     notFound();
   }
+
+  const foundingProgram = readFoundingProgramConfig();
+  const foundingEligibility = evaluateFoundingEligibility({
+    program: foundingProgram,
+    onboardedAt: creator.onboardedAt,
+    creatorStatus: creator.status,
+    isSample: creator.isSample,
+    effectivePublicListingCount: creator.effectivePublicListingCount,
+    isFounding: creator.isFounding,
+  });
 
   return (
     <main>
@@ -85,10 +99,57 @@ export default async function AdminCreatorDetailPage({
           ) : null}
 
           <section className="rounded-lg border border-neutral-200 bg-white p-5">
+            <h2 className="text-base font-semibold">Founding Creator</h2>
+            {creator.isFounding ? (
+              <div className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-700">
+                <p className="font-medium">Founding Creator 확정 완료</p>
+                {creator.foundingGrantedAt ? (
+                  <p className="mt-1">
+                    확정일 {formatRequestDate(creator.foundingGrantedAt)}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <>
+                <ul className="mt-4 space-y-2 text-sm">
+                  <FoundingChecklistItem
+                    ok={foundingEligibility.programConfigured}
+                    text={
+                      foundingEligibility.programConfigured
+                        ? `프로그램 설정 ${formatRequestDate(foundingProgram.configured ? foundingProgram.startAt.toISOString() : "")}`
+                        : "Founding 프로그램 시작일 설정 필요"
+                    }
+                  />
+                  <FoundingChecklistItem
+                    ok={foundingEligibility.onboardingCompleted}
+                    text="직접 온보딩 완료"
+                  />
+                  <FoundingChecklistItem
+                    ok={foundingEligibility.withinProgramWindow}
+                    text="100일 기간 조건"
+                  />
+                  <FoundingChecklistItem
+                    ok={foundingEligibility.hasPublicListing}
+                    text="공개 광고 상품 1개 이상"
+                  />
+                  <FoundingChecklistItem
+                    ok={foundingEligibility.isRealCreator}
+                    text="실제 크리에이터"
+                  />
+                </ul>
+                {foundingEligibility.eligibleForApproval ? (
+                  <FoundingApprovalForm
+                    action={approveFoundingCreator.bind(null, creator.id)}
+                  />
+                ) : null}
+              </>
+            )}
+          </section>
+
+          <section className="rounded-lg border border-neutral-200 bg-white p-5">
             <h2 className="text-base font-semibold">이번 단계 제외</h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              프로필 자기 수정, 상품 자기 관리, Founding Creator 확정은 이후
-              단계에서 별도로 구현합니다.
+              Telegram, 결제, 정산은 이후 단계에서 별도로 구현합니다.
             </p>
           </section>
         </aside>
@@ -103,5 +164,14 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <dt className="text-neutral-500">{label}</dt>
       <dd className="mt-1 font-medium text-neutral-950">{value}</dd>
     </div>
+  );
+}
+
+function FoundingChecklistItem({ ok, text }: { ok: boolean; text: string }) {
+  return (
+    <li className={ok ? "text-neutral-800" : "text-neutral-500"}>
+      <span className="mr-2 font-medium">{ok ? "✓" : "✕"}</span>
+      {text}
+    </li>
   );
 }

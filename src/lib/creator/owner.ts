@@ -17,6 +17,8 @@ export type OwnedCreator = {
   avatarPath: string | null;
   socialLinks: CreatorSocialLinks;
   status: CreatorStatus;
+  isFounding: boolean;
+  foundingGrantedAt: string | null;
   onboardedAt: string | null;
   publishedListingCount: number;
   hiddenListingCount: number;
@@ -32,6 +34,8 @@ type OwnedCreatorRow = {
   avatar_path: string | null;
   social_links: CreatorSocialLinks | null;
   status: CreatorStatus;
+  is_founding: boolean;
+  founding_granted_at: string | null;
   onboarded_at: string | null;
   listings: Array<{
     id: string;
@@ -63,6 +67,8 @@ export async function getOwnedCreatorForUser(userId: string) {
         avatar_path,
         social_links,
         status,
+        is_founding,
+        founding_granted_at,
         onboarded_at,
         listings (
           id,
@@ -96,6 +102,8 @@ export async function getOwnedCreatorForUser(userId: string) {
     avatarPath: row.avatar_path,
     socialLinks: row.social_links ?? {},
     status: row.status,
+    isFounding: row.is_founding,
+    foundingGrantedAt: row.founding_granted_at,
     onboardedAt: row.onboarded_at,
     publishedListingCount: listings.filter((listing) => listing.status === "published").length,
     hiddenListingCount: listings.filter((listing) => listing.status === "hidden").length,
