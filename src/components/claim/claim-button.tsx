@@ -2,20 +2,29 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import type { ClaimActionState } from "@/app/claim/[token]/actions";
+
+type ClaimActionState = {
+  message?: string;
+};
 
 type ClaimButtonProps = {
   action: (state: ClaimActionState) => Promise<ClaimActionState>;
+  label?: string;
+  pendingLabel?: string;
 };
 
 const initialState: ClaimActionState = {};
 
-export function ClaimButton({ action }: ClaimButtonProps) {
+export function ClaimButton({
+  action,
+  label = "내 계정에 연결하기",
+  pendingLabel = "연결 중",
+}: ClaimButtonProps) {
   const [state, formAction] = useActionState(action, initialState);
 
   return (
     <form action={formAction}>
-      <SubmitButton />
+      <SubmitButton label={label} pendingLabel={pendingLabel} />
       {state.message ? (
         <p className="mt-3 text-sm text-red-700" role="alert">
           {state.message}
@@ -25,7 +34,13 @@ export function ClaimButton({ action }: ClaimButtonProps) {
   );
 }
 
-function SubmitButton() {
+function SubmitButton({
+  label,
+  pendingLabel,
+}: {
+  label: string;
+  pendingLabel: string;
+}) {
   const { pending } = useFormStatus();
 
   return (
@@ -34,7 +49,7 @@ function SubmitButton() {
       disabled={pending}
       type="submit"
     >
-      {pending ? "연결 중" : "내 계정에 연결하기"}
+      {pending ? pendingLabel : label}
     </button>
   );
 }

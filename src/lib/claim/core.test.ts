@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  canGenerateClaimLink,
+  canUserClaimCreator,
+  claimIntentClearCookieOptions,
+  claimIntentCookieOptions,
+  claimResumePath,
   buildClaimSuccessPayload,
   buildClaimUpdateMatch,
   claimExpiresAt,
   generateClaimToken,
+  getClaimLoginNextPath,
   hashClaimToken,
   isClaimLinkUsable,
 } from "./core";
@@ -42,6 +48,7 @@ describe("claim token core", () => {
       isClaimLinkUsable({
         claimExpiresAt: "2026-07-05T00:00:00.000Z",
         ownerUserId: null,
+        status: "published",
         now: new Date("2026-07-06T00:00:00.000Z"),
       }),
     ).toBe(false);
@@ -49,9 +56,63 @@ describe("claim token core", () => {
       isClaimLinkUsable({
         claimExpiresAt: "2026-07-07T00:00:00.000Z",
         ownerUserId: "user-id",
+        status: "published",
         now: new Date("2026-07-06T00:00:00.000Z"),
       }),
     ).toBe(false);
+  });
+
+  it("rejects archived creator claim links", () => {
+    expect(
+      isClaimLinkUsable({
+        claimExpiresAt: "2026-07-07T00:00:00.000Z",
+        ownerUserId: null,
+        status: "archived",
+        now: new Date("2026-07-06T00:00:00.000Z"),
+      }),
+    ).toBe(false);
+  });
+
+  it("blocks archived creator claim link generation", () => {
+    expect(canGenerateClaimLink({ ownerUserId: null, status: "published" })).toBe(
+      true,
+    );
+    expect(canGenerateClaimLink({ ownerUserId: null, status: "archived" })).toBe(
+      false,
+    );
+    expect(
+      canGenerateClaimLink({ ownerUserId: "user-id", status: "published" }),
+    ).toBe(false);
+  });
+
+  it("blocks users that already have a creator connection", () => {
+    expect(canUserClaimCreator({ connectedCreatorCount: 0 })).toBe(true);
+    expect(canUserClaimCreator({ connectedCreatorCount: 1 })).toBe(false);
+  });
+
+  it("uses claim resume for OAuth next without exposing raw claim tokens", () => {
+    const rawToken = "raw-token";
+
+    expect(getClaimLoginNextPath()).toBe(claimResumePath);
+    expect(getClaimLoginNextPath()).not.toContain(rawToken);
+  });
+
+  it("builds a short-lived HttpOnly claim intent cookie", () => {
+    expect(claimIntentCookieOptions()).toMatchObject({
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 15 * 60,
+    });
+  });
+
+  it("clears claim intent cookie after resume success or invalid intent", () => {
+    expect(claimIntentClearCookieOptions()).toMatchObject({
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
   });
 
   it("builds conditional claim update match", () => {

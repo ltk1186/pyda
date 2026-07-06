@@ -20,6 +20,7 @@ type ClaimCreatorRow = {
   display_name: string;
   owner_user_id: string | null;
   claim_expires_at: string | null;
+  status: string;
 };
 
 export async function getValidClaimCreator(rawToken: string) {
@@ -27,7 +28,7 @@ export async function getValidClaimCreator(rawToken: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("creators")
-    .select("id, display_name, owner_user_id, claim_expires_at")
+    .select("id, display_name, owner_user_id, claim_expires_at, status")
     .eq("claim_token_hash", tokenHash)
     .maybeSingle();
 
@@ -42,6 +43,7 @@ export async function getValidClaimCreator(rawToken: string) {
     !isClaimLinkUsable({
       claimExpiresAt: row.claim_expires_at,
       ownerUserId: row.owner_user_id,
+      status: row.status,
       now: new Date(),
     })
   ) {
@@ -52,6 +54,20 @@ export async function getValidClaimCreator(rawToken: string) {
     id: row.id,
     displayName: row.display_name,
   } satisfies ClaimCreator;
+}
+
+export async function getConnectedCreatorCount(userId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("creators")
+    .select("id")
+    .eq("owner_user_id", userId);
+
+  if (error) {
+    throw new Error(`Failed to load connected creators: ${error.message}`);
+  }
+
+  return (data ?? []).length;
 }
 
 export async function getOwnedCreatorSummary(userId: string) {

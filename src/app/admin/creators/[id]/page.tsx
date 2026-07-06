@@ -78,7 +78,7 @@ export default async function AdminCreatorDetailPage({
             </dl>
           </section>
 
-          {!creator.isClaimed ? (
+          {!creator.isClaimed && creator.status !== "archived" ? (
             <ClaimLinkForm
               action={generateCreatorClaimLink.bind(null, creator.id)}
             />

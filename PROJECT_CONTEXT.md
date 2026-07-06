@@ -143,9 +143,9 @@ Implemented:
 - Admin foundation slice: admin access check, server-only Supabase admin client, dashboard, request list/detail, admin notes, and allowed request status operations
 - Admin creator management slice: creator list, create, edit, status management, social links, and archive-by-status flow
 - Admin listing management and public media image slice: listing list/create/edit, image path ordering, Storage bucket migration, and public image URL resolution
-- Image upload hardening and creator claim onboarding slice: strict image order validation, 16mb Server Action limit, admin claim link generation, `/claim/[token]`, and minimal `/creator`
+- Image upload hardening and creator claim onboarding slice: strict image order validation, 16mb Server Action limit, admin claim link generation, claim intent cookie hardening, `/claim/[token]`, `/claim/resume`, and minimal `/creator`
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
-- Cloudflare Workers deployment scaffolding through OpenNext
+- Cloudflare Workers deployment scaffolding through OpenNext, using the legacy `middleware.ts` session refresh convention for current OpenNext compatibility
 - Minimal lint, type-check, and unit test setup
 
 Not implemented yet:

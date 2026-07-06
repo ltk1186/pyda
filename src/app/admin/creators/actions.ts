@@ -10,6 +10,7 @@ import {
   type AdminCreatorFormErrors,
 } from "@/lib/admin/creator-core";
 import {
+  canGenerateClaimLink,
   claimExpiresAt,
   generateClaimToken,
   hashClaimToken,
@@ -113,7 +114,7 @@ export async function generateCreatorClaimLink(
   const supabase = createAdminClient();
   const { data: creator, error: readError } = await supabase
     .from("creators")
-    .select("id, owner_user_id")
+    .select("id, owner_user_id, status")
     .eq("id", creatorId)
     .maybeSingle();
 
@@ -123,6 +124,15 @@ export async function generateCreatorClaimLink(
 
   if (creator.owner_user_id !== null) {
     return { message: "이미 계정이 연결된 크리에이터입니다." };
+  }
+
+  if (
+    !canGenerateClaimLink({
+      ownerUserId: creator.owner_user_id as string | null,
+      status: creator.status as string,
+    })
+  ) {
+    return { message: "보관된 크리에이터는 온보딩 링크를 생성할 수 없습니다." };
   }
 
   const rawToken = generateClaimToken();
@@ -136,6 +146,7 @@ export async function generateCreatorClaimLink(
     })
     .eq("id", creatorId)
     .is("owner_user_id", null)
+    .neq("status", "archived")
     .select("id")
     .maybeSingle();
 
