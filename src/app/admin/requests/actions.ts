@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/auth";
 import {
+  buildRequestStatusUpdateMatch,
   canAdminTransitionRequest,
   parsePositiveKrw,
   type AdminTransitionStatus,
@@ -14,6 +15,9 @@ export type AdminActionState = {
   message?: string;
   ok?: boolean;
 };
+
+const staleStatusMessage =
+  "요청 상태가 이미 변경되었습니다. 새로고침 후 다시 확인해주세요.";
 
 export async function updateAdminRequestNotes(
   requestId: string,
@@ -78,25 +82,41 @@ export async function updateAdminRequestStatus(
       return { message: "확인 중 상태에서만 결제 가능으로 변경할 수 있습니다." };
     }
 
-    const { error } = await supabase
+    const match = buildRequestStatusUpdateMatch(requestId, currentStatus);
+    const { data: updated, error } = await supabase
       .from("requests")
       .update({
         quoted_amount_krw: quotedAmountKrw,
         status: "payment_ready",
       })
-      .eq("id", requestId);
+      .eq("id", match.id)
+      .eq("status", match.status)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
       return { message: "요청 상태를 변경하지 못했습니다." };
     }
+
+    if (!updated) {
+      return { message: staleStatusMessage };
+    }
   } else {
-    const { error } = await supabase
+    const match = buildRequestStatusUpdateMatch(requestId, currentStatus);
+    const { data: updated, error } = await supabase
       .from("requests")
       .update({ status: nextStatus })
-      .eq("id", requestId);
+      .eq("id", match.id)
+      .eq("status", match.status)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
       return { message: "요청 상태를 변경하지 못했습니다." };
+    }
+
+    if (!updated) {
+      return { message: staleStatusMessage };
     }
   }
 

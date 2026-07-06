@@ -99,7 +99,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     completedRequests,
   ] = await Promise.all([
     countRows(supabase, "creators", "status", "published"),
-    countRows(supabase, "listings", "status", "published"),
+    countPublishedMarketplaceListings(supabase),
     countRows(supabase, "requests", "status", "submitted"),
     countRows(supabase, "requests", "status", "completed"),
   ]);
@@ -143,9 +143,33 @@ export async function getAdminRequestById(
   return data ? mapAdminRequestDetail(data as AdminRequestRow) : null;
 }
 
+async function countPublishedMarketplaceListings(
+  supabase: ReturnType<typeof createAdminClient>,
+) {
+  const { count, error } = await supabase
+    .from("listings")
+    .select(
+      `
+        id,
+        creators!inner (
+          status
+        )
+      `,
+      { count: "exact", head: true },
+    )
+    .eq("status", "published")
+    .eq("creators.status", "published");
+
+  if (error) {
+    throw new Error(`Failed to count published marketplace listings: ${error.message}`);
+  }
+
+  return count ?? 0;
+}
+
 async function countRows(
   supabase: ReturnType<typeof createAdminClient>,
-  table: "creators" | "listings" | "requests",
+  table: "creators" | "requests",
   column: "status",
   value: string,
 ) {

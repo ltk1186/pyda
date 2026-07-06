@@ -40,6 +40,16 @@ export function canAdminTransitionRequest(
   );
 }
 
+export function buildRequestStatusUpdateMatch(
+  requestId: string,
+  currentStatus: RequestStatus,
+) {
+  return {
+    id: requestId,
+    status: currentStatus,
+  };
+}
+
 export function parsePositiveKrw(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || !/^[1-9]\d*$/.test(value.trim())) {
     return null;

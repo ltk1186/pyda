@@ -141,6 +141,7 @@ Implemented:
 - Supabase SSR auth proxy for session refresh and claims-based current user checks
 - Logged-in advertiser request slice: request form, server-side request creation, and own request list/detail pages
 - Admin foundation slice: admin access check, server-only Supabase admin client, dashboard, request list/detail, admin notes, and allowed request status operations
+- Admin creator management slice: creator list, create, edit, status management, social links, and archive-by-status flow
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
 - Cloudflare Workers deployment scaffolding through OpenNext
 - Minimal lint, type-check, and unit test setup
@@ -148,8 +149,8 @@ Implemented:
 Not implemented yet:
 
 - Actual OAuth provider configuration in Supabase
-- Real creator/listing data management
+- Listing data management
 - Creator flows
-- Full admin console for creator/listing CRUD and onboarding
+- Full admin console for listing CRUD, onboarding, and Founding Creator operations
 - Payments
 - Notifications

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildRequestStatusUpdateMatch,
   canAdminTransitionRequest,
   formatAdminRequestStatus,
   getAllowedAdminRequestTransitions,
@@ -39,5 +40,12 @@ describe("admin request status", () => {
     expect(parsePositiveKrw("-1")).toBeNull();
     expect(parsePositiveKrw("1000.5")).toBeNull();
     expect(parsePositiveKrw("abc")).toBeNull();
+  });
+
+  it("builds compare-and-set filters for request status updates", () => {
+    expect(buildRequestStatusUpdateMatch("request-id", "checking")).toEqual({
+      id: "request-id",
+      status: "checking",
+    });
   });
 });

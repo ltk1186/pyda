@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const navigation = [
   { label: "대시보드", href: "/admin", enabled: true },
-  { label: "크리에이터", href: null, enabled: false },
+  { label: "크리에이터", href: "/admin/creators", enabled: true },
   { label: "광고 상품", href: null, enabled: false },
   { label: "광고 요청", href: "/admin/requests", enabled: true },
   { label: "결제 및 정산", href: null, enabled: false },
