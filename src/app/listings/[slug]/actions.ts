@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getPublicListingBySlug } from "@/lib/marketplace/data";
+import { shouldAttemptRequestNotification } from "@/lib/notifications/request-message";
+import { notifyNewAdvertisementRequest } from "@/lib/notifications/telegram";
 import {
   buildRequestInsertPayload,
   parseRequestFormData,
@@ -55,6 +57,19 @@ export async function createAdvertisementRequest(
     return {
       message: "광고 요청을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.",
     };
+  }
+
+  if (
+    shouldAttemptRequestNotification({
+      insertedRequestId: data.id as string,
+      insertFailed: false,
+    })
+  ) {
+    await notifyNewAdvertisementRequest({
+      requestId: data.id as string,
+      request: parsed.data,
+      listing,
+    });
   }
 
   redirect(`/account/requests/${data.id}`);

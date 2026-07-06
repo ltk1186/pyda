@@ -146,6 +146,7 @@ Implemented:
 - Image upload hardening and creator claim onboarding slice: strict image order validation, 16mb Server Action limit, admin claim link generation, claim intent cookie hardening, `/claim/[token]`, `/claim/resume`, and minimal `/creator`
 - Creator self-management slice: owned creator dashboard, profile/avatar editing, own listing create/edit, and explicit onboarding completion
 - Creator self-management hardening for archived creators and Founding Creator eligibility/admin approval slice
+- Telegram admin notification slice for newly submitted advertisement requests
 - RLS policies for public reads, owner access, creator-owned rows, advertiser requests/payments, and admin management
 - Cloudflare Workers deployment scaffolding through OpenNext, using the legacy `middleware.ts` session refresh convention for current OpenNext compatibility
 - Minimal lint, type-check, and unit test setup
@@ -154,4 +155,4 @@ Not implemented yet:
 
 - Actual OAuth provider configuration in Supabase
 - Payments
-- Notifications
+- Live Telegram bot configuration
