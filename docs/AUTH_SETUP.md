@@ -1,26 +1,54 @@
-# Supabase Kakao Auth Setup
+# Kakao OIDC Auth Setup
 
 Manual setup required before real Kakao login can work.
 
+The app starts Kakao authorization directly from a server route. The flow is:
+
+```text
+Kakao authorization code
+-> Kakao token exchange
+-> Kakao OIDC ID token
+-> Supabase signInWithIdToken
+```
+
+## Environment
+
+Set these values locally and in deployment secrets:
+
+- `APP_BASE_URL`
+- `KAKAO_REST_API_KEY`
+- `KAKAO_CLIENT_SECRET`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+`APP_BASE_URL` is the single source for the Kakao callback URL:
+
+```text
+{APP_BASE_URL}/auth/kakao/callback
+```
+
+Do not put real Kakao keys or Supabase secrets in this document.
+
 ## Kakao Developers
 
-- Create or select the Kakao app.
-- Confirm the REST API key.
 - Enable Kakao Login.
-- Configure the Kakao Login Client Secret.
-- Add Supabase callback URL as a Kakao Redirect URI.
+- Enable OpenID Connect.
+- Use nickname consent.
+- Use profile image consent.
+- Do not request `account_email`.
+- Add the custom redirect URI:
+  - Local: `http://localhost:3000/auth/kakao/callback`
+  - Production: `{production APP_BASE_URL}/auth/kakao/callback`
 
 ## Supabase
 
 - Enable the Kakao provider.
 - Set Kakao Client ID to the Kakao REST API key.
 - Set Kakao Client Secret.
-- Enable `Allow users without an email` when Kakao email is not required.
+- Enable `Allow users without an email`.
 - Set the local Site URL.
-- Add local redirect URL allow list entries, including:
-  - `http://localhost:3000/auth/callback`
+- Add local redirect allow list entries for app routes as needed.
 
-The app preserves late-login return paths through `/login?next=...` and validates
-`next` so only same-site relative paths are accepted.
-
-Do not store real Kakao keys, client secrets, or Supabase secrets in this file.
+The app preserves late-login return paths through `/login?next=...`, stores the
+OAuth intent in short-lived HttpOnly cookies, and validates `next` so only
+same-site relative paths are accepted.

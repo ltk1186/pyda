@@ -137,7 +137,7 @@ Implemented:
 - Idempotent sample seed data for published sample creators and listings
 - Public marketplace first slice: home listing grid, platform filter, listing cards, and listing detail pages
 - Public marketplace hardening for DB-backed data source behavior and URL-based request intent
-- Kakao-only late-login OAuth configured in code through Supabase Auth
+- Kakao-only late-login OIDC flow configured in code through Kakao authorization code and Supabase `signInWithIdToken`
 - Supabase SSR auth proxy for session refresh and claims-based current user checks
 - Logged-in advertiser request slice: request form, server-side request creation, and own request list/detail pages
 - Admin foundation slice: admin access check, server-only Supabase admin client, dashboard, request list/detail, admin notes, and allowed request status operations

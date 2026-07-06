@@ -1,26 +1,14 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  buildKakaoOAuthRedirectTo,
-  kakaoOAuthProvider,
-} from "./kakao-login-button";
+import { buildKakaoStartPath } from "./kakao-login-button";
 
 const root = process.cwd();
 
 describe("KakaoLoginButton OAuth config", () => {
-  it("uses Kakao as the fixed OAuth provider", () => {
-    expect(kakaoOAuthProvider).toBe("kakao");
-  });
-
-  it("builds callback redirectTo with the original safe next path", () => {
-    expect(
-      buildKakaoOAuthRedirectTo(
-        "http://localhost:3000",
-        "/listings/sample?request=1",
-      ),
-    ).toBe(
-      "http://localhost:3000/auth/callback?next=%2Flistings%2Fsample%3Frequest%3D1",
+  it("starts the server-side Kakao OIDC flow with the original safe next path", () => {
+    expect(buildKakaoStartPath("/listings/sample?request=1")).toBe(
+      "/auth/kakao/start?next=%2Flistings%2Fsample%3Frequest%3D1",
     );
   });
 
@@ -44,6 +32,8 @@ describe("KakaoLoginButton OAuth config", () => {
 
     expect(loginPage).not.toMatch(oldProviderPattern);
     expect(kakaoButton).not.toMatch(oldProviderPattern);
+    expect(kakaoButton).not.toContain("signInWithOAuth");
+    expect(kakaoButton).not.toContain("KAKAO_CLIENT_SECRET");
     expect(kakaoButton).toContain("카카오로 시작하기");
   });
 });

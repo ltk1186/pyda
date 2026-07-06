@@ -317,9 +317,9 @@ Supabase Storage는 파일 저장과 RLS 기반 접근 제어를 지원하므로
 
 회원가입 버튼은 별도로 두지 않는다.
 
-**첫 Kakao OAuth 로그인 자체가 가입이자 로그인이다.**
+**첫 Kakao OIDC 로그인 자체가 가입이자 로그인이다.**
 
-Supabase Kakao OAuth를 사용하며, Next.js의 callback route에서 PKCE code exchange 후 세션을 cookie에 저장하는 구조를 사용한다. ([Supabase][5])
+Kakao authorization code를 서버에서 OIDC ID token으로 교환한 뒤 Supabase `signInWithIdToken()`으로 세션을 cookie에 저장하는 구조를 사용한다. ([Supabase][5])
 
 공개 상품 탐색은 로그인 없이 가능하다.
 
@@ -358,7 +358,8 @@ Supabase Kakao OAuth를 사용하며, Next.js의 callback route에서 PKCE code 
 | `/creators/[slug]` | 크리에이터 공개 프로필        |
 | `/creators/join`   | Founding Creator 모집 |
 | `/login`           | OAuth 로그인           |
-| `/auth/callback`   | OAuth 처리            |
+| `/auth/kakao/start` | Kakao 로그인 시작       |
+| `/auth/kakao/callback` | Kakao OIDC 처리     |
 | `/claim/[token]`   | 관리자 직접 온보딩 연결       |
 
 광고주 로그인 후에는 다음 두 개만 추가한다.
