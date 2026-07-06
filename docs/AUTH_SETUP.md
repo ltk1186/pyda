@@ -1,16 +1,26 @@
-# Supabase Auth Setup
+# Supabase Kakao Auth Setup
 
-Manual setup required before real OAuth login can work:
+Manual setup required before real Kakao login can work.
 
-1. In Supabase Dashboard, enable Auth providers:
-   - Google
-   - Kakao
-2. Add provider client IDs and secrets from each provider console.
-3. Add redirect URL:
-   - Local: `http://localhost:3000/auth/callback`
-   - Production: `https://pyda.io/auth/callback`
-4. Configure app environment:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+## Kakao Developers
 
-The app preserves late-login return paths through `/login?next=...` and validates `next` so only same-site relative paths are accepted.
+- Create or select the Kakao app.
+- Confirm the REST API key.
+- Enable Kakao Login.
+- Configure the Kakao Login Client Secret.
+- Add Supabase callback URL as a Kakao Redirect URI.
+
+## Supabase
+
+- Enable the Kakao provider.
+- Set Kakao Client ID to the Kakao REST API key.
+- Set Kakao Client Secret.
+- Enable `Allow users without an email` when Kakao email is not required.
+- Set the local Site URL.
+- Add local redirect URL allow list entries, including:
+  - `http://localhost:3000/auth/callback`
+
+The app preserves late-login return paths through `/login?next=...` and validates
+`next` so only same-site relative paths are accepted.
+
+Do not store real Kakao keys, client secrets, or Supabase secrets in this file.

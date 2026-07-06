@@ -45,7 +45,7 @@ Use one codebase, one deployment, and one Supabase project.
 
 ## Core Flow
 
-방문 -> 광고 상품 탐색 -> 상품 상세 확인 -> 광고 진행하기 -> Google 또는 Kakao 로그인 -> 광고 요청 -> 관리자에게 알림 -> 관리자가 직접 크리에이터와 조율 -> 결제 가능 상태 -> Toss Payments 결제 -> 광고 집행 -> 완료 및 정산
+방문 -> 광고 상품 탐색 -> 상품 상세 확인 -> 광고 진행하기 -> Kakao 로그인 -> 광고 요청 -> 관리자에게 알림 -> 관리자가 직접 크리에이터와 조율 -> 결제 가능 상태 -> Toss Payments 결제 -> 광고 집행 -> 완료 및 정산
 
 Initial operations are concierge-led. Admin-managed transaction operation is more important than automation.
 
@@ -53,7 +53,7 @@ Initial operations are concierge-led. Admin-managed transaction operation is mor
 
 At first, admins can create creators and listings on behalf of creators.
 
-Admins generate onboarding links and send them to creators. When a creator logs in with Google or Kakao through the claim link, the pre-created creator profile and listings are attached to that account.
+Admins generate onboarding links and send them to creators. When a creator logs in with Kakao through the claim link, the pre-created creator profile and listings are attached to that account.
 
 ## Founding Creator
 
@@ -89,7 +89,7 @@ Admins can add, edit, hide, and archive all creators and listings.
 - Supabase PostgreSQL
 - Supabase Auth
 - Supabase Storage
-- Google + Kakao OAuth
+- Kakao-only OAuth
 - Toss Payments
 - Telegram admin notifications
 - Cloudflare Workers
@@ -137,7 +137,7 @@ Implemented:
 - Idempotent sample seed data for published sample creators and listings
 - Public marketplace first slice: home listing grid, platform filter, listing cards, and listing detail pages
 - Public marketplace hardening for DB-backed data source behavior and URL-based request intent
-- Late-login OAuth scaffold for Google and Kakao through Supabase Auth
+- Kakao-only late-login OAuth configured in code through Supabase Auth
 - Supabase SSR auth proxy for session refresh and claims-based current user checks
 - Logged-in advertiser request slice: request form, server-side request creation, and own request list/detail pages
 - Admin foundation slice: admin access check, server-only Supabase admin client, dashboard, request list/detail, admin notes, and allowed request status operations
@@ -153,6 +153,6 @@ Implemented:
 
 Not implemented yet:
 
-- Actual OAuth provider configuration in Supabase
+- Actual Kakao login browser verification
 - Payments
 - Live Telegram bot configuration

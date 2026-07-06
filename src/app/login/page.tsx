@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { OAuthButtons } from "@/components/auth/oauth-buttons";
+import { KakaoLoginButton } from "@/components/auth/kakao-login-button";
 import { sanitizeNextPath } from "@/lib/auth/redirect";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -29,11 +29,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Pyda
         </Link>
         <h1 className="mt-8 text-2xl font-semibold tracking-tight">
-          광고 진행을 시작하려면 로그인해주세요.
+          카카오로 바로 시작하세요.
         </h1>
         <p className="mt-3 text-sm leading-6 text-neutral-600">
-          Google 또는 Kakao 로그인만 사용합니다. 첫 OAuth 로그인이 가입과
-          로그인을 대신합니다.
+          별도 회원가입 없이 카카오 계정으로 광고 요청과 크리에이터 관리를
+          시작할 수 있습니다.
         </p>
         {error ? (
           <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-700">
@@ -41,7 +41,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </p>
         ) : null}
         <div className="mt-7">
-          <OAuthButtons nextPath={nextPath} />
+          <KakaoLoginButton nextPath={nextPath} />
         </div>
       </section>
     </main>

@@ -60,7 +60,7 @@ Supabase
 | 폼      | React Hook Form + Zod                   |
 | DB     | Supabase PostgreSQL                     |
 | 인증     | Supabase Auth                           |
-| 로그인    | Google + Kakao                          |
+| 로그인    | Kakao only                              |
 | 이미지    | Supabase Storage                        |
 | 서버 로직  | Next.js Route Handlers / Server Actions |
 | 결제     | Toss Payments 결제위젯                      |
@@ -309,28 +309,30 @@ Supabase Storage는 파일 저장과 RLS 기반 접근 제어를 지원하므로
 
 # 9. 로그인
 
-로그인 화면에는 두 개만 둔다.
+로그인 화면에는 하나만 둔다.
 
 ```text
-Google로 계속하기
-
-Kakao로 계속하기
+카카오로 시작하기
 ```
 
 회원가입 버튼은 별도로 두지 않는다.
 
-**첫 OAuth 로그인 자체가 가입이다.**
+**첫 Kakao OAuth 로그인 자체가 가입이자 로그인이다.**
 
-Supabase는 Google과 Kakao OAuth를 공식 지원하며, Next.js의 callback route에서 PKCE code exchange 후 세션을 cookie에 저장하는 구조를 사용할 수 있다. ([Supabase][5])
+Supabase Kakao OAuth를 사용하며, Next.js의 callback route에서 PKCE code exchange 후 세션을 cookie에 저장하는 구조를 사용한다. ([Supabase][5])
+
+공개 상품 탐색은 로그인 없이 가능하다.
+
+로그인은 실제 행동 직전, 예를 들어 `광고 진행하기`를 누르는 순간에만 요구한다.
 
 사용자는 다음 과정을 경험한다.
 
 ```text
 광고 진행하기
     ↓
-Google로 계속하기
+카카오로 시작하기
     ↓
-Google 계정 선택
+카카오 계정 확인
     ↓
 바로 광고 요청 화면
 ```
@@ -427,7 +429,7 @@ Google 계정 선택
 /claim/[token]
 ```
 
-로그인하지 않았다면 Google 또는 Kakao 로그인을 한다.
+로그인하지 않았다면 Kakao 로그인을 한다.
 
 로그인이 끝나면 서버에서 다음을 처리한다.
 
@@ -1059,7 +1061,7 @@ AI 기능
 
 **4단계는 인증과 온보딩이다.**
 
-Google, Kakao, 직접 생성한 크리에이터의 claim link를 만든다.
+Kakao OAuth와 직접 생성한 크리에이터의 claim link를 만든다.
 
 **5단계는 광고 요청이다.**
 
@@ -1091,4 +1093,4 @@ Google, Kakao, 직접 생성한 크리에이터의 claim link를 만든다.
 [2]: https://supabase.com/docs/guides/database/postgres/row-level-security "Row Level Security | Supabase Docs"
 [3]: https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/ "Next.js · Cloudflare Workers docs"
 [4]: https://supabase.com/docs/guides/storage "Storage | Supabase Docs"
-[5]: https://supabase.com/docs/guides/auth/social-login/auth-google "Login with Google | Supabase Docs"
+[5]: https://supabase.com/docs/guides/auth/social-login/auth-kakao "Login with Kakao | Supabase Docs"
