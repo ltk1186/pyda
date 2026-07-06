@@ -7,11 +7,14 @@ import {
   assertExistingImageSubset,
   buildAdminListingInsertPayload,
   buildAdminListingUpdatePayload,
-  maxListingImages,
+  buildOrderedImagePaths,
   nextPublishedAt,
   validateAdminListingBase,
   validateImageCount,
+  validateImageOrder,
   type AdminListingFormErrors,
+  type ImageOrderItem,
+  type ImageOrderMode,
   type ListingStatus,
 } from "@/lib/admin/listing-core";
 import { cleanupStorageObjects, uploadListingImages } from "@/lib/admin/storage";
@@ -39,8 +42,18 @@ export async function createAdminListing(
   await requireAdmin("/admin/listings/new");
 
   const files = getImageFiles(formData);
-  const imageOrder = getImageOrder(formData, [], files.length);
-  const parsed = parseListingForm(formData, imageOrder.length);
+  const imageOrder = parseStrictImageOrder({
+    currentImagePaths: [],
+    formData,
+    mode: "create",
+    newImageCount: files.length,
+  });
+
+  if (!imageOrder.ok) {
+    return { errors: { images: imageOrder.message } };
+  }
+
+  const parsed = parseListingForm(formData, imageOrder.order.length);
 
   if (!parsed.ok) {
     return { errors: parsed.errors };
@@ -67,7 +80,7 @@ export async function createAdminListing(
   const finalImagePaths = buildOrderedImagePaths({
     currentImagePaths: [],
     uploadedImagePaths: uploaded.uploaded.map((image) => image.path),
-    imageOrder,
+    imageOrder: imageOrder.order,
   });
 
   const imageError = validateImageCount(parsed.data.status, finalImagePaths.length);
@@ -125,8 +138,18 @@ export async function updateAdminListing(
 
   const currentImagePaths = current.image_paths ?? [];
   const files = getImageFiles(formData);
-  const imageOrder = getImageOrder(formData, currentImagePaths, files.length);
-  const requestedExistingPaths = imageOrder
+  const imageOrder = parseStrictImageOrder({
+    currentImagePaths,
+    formData,
+    mode: "update",
+    newImageCount: files.length,
+  });
+
+  if (!imageOrder.ok) {
+    return { errors: { images: imageOrder.message } };
+  }
+
+  const requestedExistingPaths = imageOrder.order
     .filter((item) => item.kind === "existing")
     .map((item) => item.path);
 
@@ -134,7 +157,7 @@ export async function updateAdminListing(
     return { errors: { images: "현재 상품에 연결된 기존 이미지만 유지할 수 있습니다." } };
   }
 
-  const parsed = parseListingForm(formData, imageOrder.length);
+  const parsed = parseListingForm(formData, imageOrder.order.length);
 
   if (!parsed.ok) {
     return { errors: parsed.errors };
@@ -154,7 +177,7 @@ export async function updateAdminListing(
   const finalImagePaths = buildOrderedImagePaths({
     currentImagePaths,
     uploadedImagePaths: uploadedPaths,
-    imageOrder,
+    imageOrder: imageOrder.order,
   });
 
   const imageError = validateImageCount(parsed.data.status, finalImagePaths.length);
@@ -271,68 +294,30 @@ function getImageFiles(formData: FormData) {
     );
 }
 
-type ImageOrderItem =
+function parseStrictImageOrder(params: {
+  currentImagePaths: string[];
+  formData: FormData;
+  mode: ImageOrderMode;
+  newImageCount: number;
+}):
   | {
-      kind: "existing";
-      path: string;
+      ok: true;
+      order: ImageOrderItem[];
     }
-  | {
-      kind: "new";
-      index: number;
-    };
-
-function getImageOrder(
-  formData: FormData,
-  currentImagePaths: string[],
-  newImageCount: number,
-) {
-  const rawOrder = formData
+    | {
+      ok: false;
+      message: string;
+    } {
+  const rawOrder = params.formData
     .getAll("imageOrder")
     .map((value) => (typeof value === "string" ? value : ""))
     .filter(Boolean);
 
-  const order =
-    rawOrder.length > 0
-      ? rawOrder.map(parseImageOrderItem).filter((item): item is ImageOrderItem => item !== null)
-      : [
-          ...currentImagePaths.map((path) => ({ kind: "existing" as const, path })),
-          ...Array.from({ length: newImageCount }, (_, index) => ({
-            kind: "new" as const,
-            index,
-          })),
-        ];
-
-  return order.slice(0, maxListingImages + 1);
-}
-
-function parseImageOrderItem(value: string): ImageOrderItem | null {
-  if (value.startsWith("existing:")) {
-    return { kind: "existing", path: value.slice("existing:".length) };
-  }
-
-  if (value.startsWith("new:")) {
-    const index = Number(value.slice("new:".length));
-
-    if (Number.isInteger(index) && index >= 0) {
-      return { kind: "new", index };
-    }
-  }
-
-  return null;
-}
-
-function buildOrderedImagePaths(params: {
-  currentImagePaths: string[];
-  uploadedImagePaths: string[];
-  imageOrder: ImageOrderItem[];
-}) {
-  return params.imageOrder.flatMap((item) => {
-    if (item.kind === "existing") {
-      return params.currentImagePaths.includes(item.path) ? [item.path] : [];
-    }
-
-    const uploadedPath = params.uploadedImagePaths[item.index];
-    return uploadedPath ? [uploadedPath] : [];
+  return validateImageOrder({
+    currentImagePaths: params.currentImagePaths,
+    mode: params.mode,
+    newImageCount: params.newImageCount,
+    rawOrder,
   });
 }
 

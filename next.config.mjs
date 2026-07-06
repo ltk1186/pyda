@@ -1,6 +1,11 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "16mb",
+    },
+  },
   turbopack: {
     root: process.cwd(),
   },

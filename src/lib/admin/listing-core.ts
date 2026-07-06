@@ -45,6 +45,18 @@ export type AdminListingFormInput = {
   isSample: boolean;
 };
 
+export type ImageOrderItem =
+  | {
+      kind: "existing";
+      path: string;
+    }
+  | {
+      kind: "new";
+      index: number;
+    };
+
+export type ImageOrderMode = "create" | "update";
+
 export type AdminListingInsertPayload = {
   id: string;
   creator_id: string;
@@ -164,6 +176,125 @@ export function assertExistingImageSubset(
 ) {
   const current = new Set(currentImagePaths);
   return requestedImagePaths.every((path) => current.has(path));
+}
+
+export function validateImageOrder(params: {
+  currentImagePaths: string[];
+  mode: ImageOrderMode;
+  newImageCount: number;
+  rawOrder: string[];
+}) {
+  const existing = new Set(params.currentImagePaths);
+  const seenExisting = new Set<string>();
+  const seenNew = new Set<number>();
+  const order: ImageOrderItem[] = [];
+
+  for (const token of params.rawOrder) {
+    if (token.startsWith("existing:")) {
+      const path = token.slice("existing:".length);
+
+      if (params.mode === "create") {
+        return {
+          ok: false as const,
+          message: "신규 광고 상품에는 기존 이미지를 사용할 수 없습니다.",
+        };
+      }
+
+      if (!existing.has(path)) {
+        return {
+          ok: false as const,
+          message: "현재 상품에 연결된 기존 이미지만 유지할 수 있습니다.",
+        };
+      }
+
+      if (seenExisting.has(path)) {
+        return {
+          ok: false as const,
+          message: "같은 기존 이미지를 중복으로 사용할 수 없습니다.",
+        };
+      }
+
+      seenExisting.add(path);
+      order.push({ kind: "existing", path });
+      continue;
+    }
+
+    if (token.startsWith("new:")) {
+      const rawIndex = token.slice("new:".length);
+
+      if (!/^(0|[1-9]\d*)$/.test(rawIndex)) {
+        return {
+          ok: false as const,
+          message: "새 이미지 순서 값이 올바르지 않습니다.",
+        };
+      }
+
+      const index = Number(rawIndex);
+
+      if (!Number.isSafeInteger(index) || index >= params.newImageCount) {
+        return {
+          ok: false as const,
+          message: "존재하지 않는 새 이미지 순서가 포함되어 있습니다.",
+        };
+      }
+
+      if (seenNew.has(index)) {
+        return {
+          ok: false as const,
+          message: "같은 새 이미지를 중복으로 사용할 수 없습니다.",
+        };
+      }
+
+      seenNew.add(index);
+      order.push({ kind: "new", index });
+      continue;
+    }
+
+    return {
+      ok: false as const,
+      message: "알 수 없는 이미지 순서 값이 포함되어 있습니다.",
+    };
+  }
+
+  for (let index = 0; index < params.newImageCount; index += 1) {
+    if (!seenNew.has(index)) {
+      return {
+        ok: false as const,
+        message: "선택한 모든 새 이미지는 순서에 정확히 한 번 포함되어야 합니다.",
+      };
+    }
+  }
+
+  const countError = order.length > maxListingImages
+    ? "이미지는 최대 3장까지 등록할 수 있습니다."
+    : null;
+
+  if (countError) {
+    return {
+      ok: false as const,
+      message: countError,
+    };
+  }
+
+  return {
+    ok: true as const,
+    order,
+  };
+}
+
+export function buildOrderedImagePaths(params: {
+  currentImagePaths: string[];
+  uploadedImagePaths: string[];
+  imageOrder: ImageOrderItem[];
+}) {
+  return params.imageOrder.flatMap((item) => {
+    if (item.kind === "existing") {
+      return params.currentImagePaths.includes(item.path) ? [item.path] : [];
+    }
+
+    const uploadedPath = params.uploadedImagePaths[item.index];
+    return uploadedPath ? [uploadedPath] : [];
+  });
 }
 
 export function buildStorageObjectPath(params: {

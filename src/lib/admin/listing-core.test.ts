@@ -7,6 +7,7 @@ import {
   parseDeliverables,
   validateAdminListingBase,
   validateImageCount,
+  validateImageOrder,
 } from "./listing-core";
 
 describe("admin listing validation", () => {
@@ -108,5 +109,102 @@ describe("admin listing validation", () => {
         nowIso: "2026-07-06T00:00:00.000Z",
       }),
     ).toBe("2026-07-01T00:00:00.000Z");
+  });
+});
+
+describe("validateImageOrder", () => {
+  it("rejects duplicate existing image order", () => {
+    const result = validateImageOrder({
+      currentImagePaths: ["existing-a"],
+      mode: "update",
+      newImageCount: 0,
+      rawOrder: ["existing:existing-a", "existing:existing-a"],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects duplicate new image indexes", () => {
+    const result = validateImageOrder({
+      currentImagePaths: [],
+      mode: "create",
+      newImageCount: 1,
+      rawOrder: ["new:0", "new:0"],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects out-of-range new image indexes", () => {
+    const result = validateImageOrder({
+      currentImagePaths: [],
+      mode: "create",
+      newImageCount: 1,
+      rawOrder: ["new:1"],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects missing new file indexes", () => {
+    const result = validateImageOrder({
+      currentImagePaths: [],
+      mode: "create",
+      newImageCount: 2,
+      rawOrder: ["new:0"],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects unknown image order tokens", () => {
+    const result = validateImageOrder({
+      currentImagePaths: [],
+      mode: "create",
+      newImageCount: 0,
+      rawOrder: ["bad:token"],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("allows valid mixed order", () => {
+    const result = validateImageOrder({
+      currentImagePaths: ["existing-a"],
+      mode: "update",
+      newImageCount: 2,
+      rawOrder: ["new:1", "existing:existing-a", "new:0"],
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      order: [
+        { kind: "new", index: 1 },
+        { kind: "existing", path: "existing-a" },
+        { kind: "new", index: 0 },
+      ],
+    });
+  });
+
+  it("rejects final image order above three items", () => {
+    const result = validateImageOrder({
+      currentImagePaths: ["a"],
+      mode: "update",
+      newImageCount: 3,
+      rawOrder: ["existing:a", "new:0", "new:1", "new:2"],
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects existing images during create", () => {
+    const result = validateImageOrder({
+      currentImagePaths: ["a"],
+      mode: "create",
+      newImageCount: 0,
+      rawOrder: ["existing:a"],
+    });
+
+    expect(result.ok).toBe(false);
   });
 });

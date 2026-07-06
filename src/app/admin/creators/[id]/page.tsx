@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { updateAdminCreator } from "@/app/admin/creators/actions";
+import {
+  generateCreatorClaimLink,
+  updateAdminCreator,
+} from "@/app/admin/creators/actions";
+import { ClaimLinkForm } from "@/components/admin/claim-link-form";
 import { AdminCreatorForm } from "@/components/admin/creator-form";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getAdminCreatorById } from "@/lib/admin/creators";
@@ -74,11 +78,17 @@ export default async function AdminCreatorDetailPage({
             </dl>
           </section>
 
+          {!creator.isClaimed ? (
+            <ClaimLinkForm
+              action={generateCreatorClaimLink.bind(null, creator.id)}
+            />
+          ) : null}
+
           <section className="rounded-lg border border-neutral-200 bg-white p-5">
             <h2 className="text-base font-semibold">이번 단계 제외</h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              계정 연결, claim link, Founding Creator 확정은 이후 단계에서
-              별도로 구현합니다.
+              프로필 자기 수정, 상품 자기 관리, Founding Creator 확정은 이후
+              단계에서 별도로 구현합니다.
             </p>
           </section>
         </aside>
