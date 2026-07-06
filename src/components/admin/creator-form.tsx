@@ -74,21 +74,25 @@ export function AdminCreatorForm({
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <TextField
             defaultValue={creator?.socialLinks.youtube}
+            error={state.errors?.youtube}
             label="YouTube URL"
             name="youtube"
           />
           <TextField
             defaultValue={creator?.socialLinks.instagram}
+            error={state.errors?.instagram}
             label="Instagram URL"
             name="instagram"
           />
           <TextField
             defaultValue={creator?.socialLinks.blog}
+            error={state.errors?.blog}
             label="네이버 블로그 URL"
             name="blog"
           />
           <TextField
             defaultValue={creator?.socialLinks.tiktok}
+            error={state.errors?.tiktok}
             label="TikTok URL"
             name="tiktok"
           />

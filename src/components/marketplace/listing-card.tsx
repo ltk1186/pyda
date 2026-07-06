@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { resolveImagePath } from "@/lib/images";
 import { shouldShowSampleBadge } from "@/lib/marketplace/badges";
 import { formatKrw } from "@/lib/marketplace/format";
 import type { PublicListing } from "@/lib/marketplace/types";
@@ -10,6 +11,7 @@ type ListingCardProps = {
 
 export function ListingCard({ listing }: ListingCardProps) {
   const coverImage = listing.imagePaths[0] ?? "/images/samples/jeju-youtube-1.svg";
+  const coverImageSrc = resolveImagePath(coverImage);
 
   return (
     <Link
@@ -20,7 +22,7 @@ export function ListingCard({ listing }: ListingCardProps) {
       <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-neutral-100">
         <Image
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.025]"
-          src={coverImage}
+          src={coverImageSrc}
           alt={`${listing.title} 대표 이미지`}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"

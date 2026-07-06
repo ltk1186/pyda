@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { resolveImagePath } from "@/lib/images";
 
 type ListingGalleryProps = {
   title: string;
@@ -25,7 +26,7 @@ export function ListingGallery({ title, imagePaths }: ListingGalleryProps) {
           >
             <Image
               className="object-cover"
-              src={image}
+              src={resolveImagePath(image)}
               alt={`${title} 이미지 ${index + 1}`}
               fill
               sizes="82vw"
@@ -39,7 +40,7 @@ export function ListingGallery({ title, imagePaths }: ListingGalleryProps) {
         <div className="relative min-h-0">
           <Image
             className="object-cover"
-            src={firstImage}
+            src={resolveImagePath(firstImage)}
             alt={`${title} 이미지 1`}
             fill
             sizes="(min-width: 768px) 66vw"
@@ -52,7 +53,7 @@ export function ListingGallery({ title, imagePaths }: ListingGalleryProps) {
               <div className="relative min-h-0" key={image}>
                 <Image
                   className="object-cover"
-                  src={image}
+                  src={resolveImagePath(image)}
                   alt={`${title} 이미지 ${index + 2}`}
                   fill
                   sizes="(min-width: 768px) 33vw"

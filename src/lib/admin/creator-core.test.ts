@@ -76,4 +76,40 @@ describe("creator form helpers", () => {
     expect(payload.claimed_at).toBeNull();
     expect(payload.onboarded_at).toBeNull();
   });
+
+  it("allows valid absolute social URLs", () => {
+    const result = validateAdminCreatorForm({
+      displayName: "김제주",
+      slug: "kim-jeju",
+      youtube: "https://youtube.com/@jeju",
+      instagram: "http://instagram.com/jeju",
+      blog: "https://blog.naver.com/jeju",
+      tiktok: "https://www.tiktok.com/@jeju",
+      status: "published",
+      isSample: false,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects invalid social URLs", () => {
+    const result = validateAdminCreatorForm({
+      displayName: "김제주",
+      slug: "kim-jeju",
+      youtube: "not-url",
+      instagram: "/relative",
+      blog: "javascript:alert(1)",
+      tiktok: "ftp://example.com/account",
+      status: "published",
+      isSample: false,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.youtube).toBeTruthy();
+      expect(result.errors.instagram).toBeTruthy();
+      expect(result.errors.blog).toBeTruthy();
+      expect(result.errors.tiktok).toBeTruthy();
+    }
+  });
 });

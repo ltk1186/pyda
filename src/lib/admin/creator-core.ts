@@ -1,3 +1,5 @@
+import { isValidAbsoluteHttpUrl } from "./url";
+
 export const creatorStatuses = [
   "draft",
   "published",
@@ -21,7 +23,16 @@ export type AdminCreatorFormInput = {
 };
 
 export type AdminCreatorFormErrors = Partial<
-  Record<"displayName" | "slug" | "status", string>
+  Record<
+    | "displayName"
+    | "slug"
+    | "status"
+    | "youtube"
+    | "instagram"
+    | "blog"
+    | "tiktok",
+    string
+  >
 >;
 
 export type AdminCreatorInsertPayload = {
@@ -97,6 +108,15 @@ export function validateAdminCreatorForm(input: Record<string, unknown>) {
     errors.status = "공개 상태를 선택해주세요.";
   }
 
+  const socialLinkErrors = validateSocialLinks({
+    youtube: input.youtube,
+    instagram: input.instagram,
+    blog: input.blog,
+    tiktok: input.tiktok,
+  });
+
+  Object.assign(errors, socialLinkErrors);
+
   if (Object.keys(errors).length > 0 || !isCreatorStatus(status)) {
     return {
       ok: false as const,
@@ -140,6 +160,22 @@ export function cleanSocialLinks(
   }
 
   return links;
+}
+
+export function validateSocialLinks(
+  input: Partial<Record<SocialLinkKey, unknown>>,
+) {
+  const errors: Partial<Record<SocialLinkKey, string>> = {};
+
+  for (const key of socialLinkKeys) {
+    const value = stringValue(input[key]).trim();
+
+    if (value && !isValidAbsoluteHttpUrl(value)) {
+      errors[key] = "http 또는 https로 시작하는 전체 URL을 입력해주세요.";
+    }
+  }
+
+  return errors;
 }
 
 export function buildAdminCreatorInsertPayload(
