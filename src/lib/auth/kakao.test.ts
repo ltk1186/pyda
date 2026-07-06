@@ -7,6 +7,7 @@ import {
   buildKakaoIdTokenCredentials,
   exchangeKakaoAuthorizationCode,
   generateKakaoOAuthToken,
+  getSupabaseAuthErrorDiagnostic,
   isValidKakaoCallbackState,
   kakaoOAuthCookieOptions,
   kakaoOAuthScope,
@@ -142,18 +143,43 @@ describe("Kakao callback", () => {
       nonce: "nonce",
     });
   });
+
+  it("keeps Supabase auth diagnostics to code and category only", () => {
+    expect(
+      getSupabaseAuthErrorDiagnostic({
+        code: "bad_jwt",
+        message: "could contain sensitive context",
+        token: "secret-token",
+      }),
+    ).toEqual({
+      code: "bad_jwt",
+      category: "auth_error",
+    });
+  });
 });
 
 describe("Kakao token exchange", () => {
   it("returns error for token HTTP errors", async () => {
     const fetchImpl = vi.fn().mockResolvedValue({
       ok: false,
+      status: 401,
       json: vi.fn(),
     });
 
     await expect(
       exchangeKakaoAuthorizationCode({ code: "code", config, fetchImpl }),
-    ).resolves.toEqual({ status: "error" });
+    ).resolves.toEqual({ status: "error", reason: "http", httpStatus: 401 });
+  });
+
+  it("returns error for invalid JSON", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockRejectedValue(new Error("invalid json")),
+    });
+
+    await expect(
+      exchangeKakaoAuthorizationCode({ code: "code", config, fetchImpl }),
+    ).resolves.toEqual({ status: "error", reason: "invalid_json" });
   });
 
   it("returns error when id_token is missing", async () => {
@@ -164,7 +190,25 @@ describe("Kakao token exchange", () => {
 
     await expect(
       exchangeKakaoAuthorizationCode({ code: "code", config, fetchImpl }),
-    ).resolves.toEqual({ status: "error" });
+    ).resolves.toEqual({ status: "error", reason: "missing_id_token" });
+  });
+
+  it("returns error for network failures", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error("network failed"));
+
+    await expect(
+      exchangeKakaoAuthorizationCode({ code: "code", config, fetchImpl }),
+    ).resolves.toEqual({ status: "error", reason: "network" });
+  });
+
+  it("returns error for timeout failures", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValue(new DOMException("aborted", "AbortError"));
+
+    await expect(
+      exchangeKakaoAuthorizationCode({ code: "code", config, fetchImpl }),
+    ).resolves.toEqual({ status: "error", reason: "timeout" });
   });
 
   it("returns id_token and posts the required form fields", async () => {

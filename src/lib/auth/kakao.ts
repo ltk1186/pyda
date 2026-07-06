@@ -31,6 +31,12 @@ export type KakaoTokenExchangeResult =
     }
   | {
       status: "error";
+      reason: "http";
+      httpStatus: number;
+    }
+  | {
+      status: "error";
+      reason: "invalid_json" | "missing_id_token" | "network" | "timeout";
     };
 
 type KakaoTokenExchangeInput = {
@@ -46,6 +52,11 @@ type KakaoSignInAuth = {
     token: string;
     nonce: string;
   }): Promise<{ error: unknown }>;
+};
+
+export type SupabaseAuthErrorDiagnostic = {
+  code: string | null;
+  category: "auth_error" | "unknown_error";
 };
 
 export function readKakaoOAuthConfig(
@@ -200,24 +211,52 @@ export async function exchangeKakaoAuthorizationCode({
     });
 
     if (!response.ok) {
-      return { status: "error" };
+      return {
+        status: "error",
+        reason: "http",
+        httpStatus: response.status,
+      };
     }
 
-    const json: unknown = await response.json();
+    let json: unknown;
+
+    try {
+      json = await response.json();
+    } catch {
+      return {
+        status: "error",
+        reason: "invalid_json",
+      };
+    }
 
     if (!isKakaoTokenResponse(json)) {
-      return { status: "error" };
+      return {
+        status: "error",
+        reason: "missing_id_token",
+      };
     }
 
     return {
       status: "success",
       idToken: json.id_token,
     };
-  } catch {
-    return { status: "error" };
+  } catch (error) {
+    return {
+      status: "error",
+      reason: isAbortError(error) ? "timeout" : "network",
+    };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export function getSupabaseAuthErrorDiagnostic(
+  error: unknown,
+): SupabaseAuthErrorDiagnostic {
+  return {
+    code: getStringProperty(error, "code"),
+    category: isObjectLike(error) ? "auth_error" : "unknown_error",
+  };
 }
 
 function isKakaoTokenResponse(value: unknown): value is { id_token: string } {
@@ -228,4 +267,25 @@ function isKakaoTokenResponse(value: unknown): value is { id_token: string } {
     typeof value.id_token === "string" &&
     value.id_token.length > 0
   );
+}
+
+function isAbortError(error: unknown) {
+  return (
+    error instanceof DOMException
+      ? error.name === "AbortError"
+      : getStringProperty(error, "name") === "AbortError"
+  );
+}
+
+function getStringProperty(value: unknown, property: string) {
+  if (!isObjectLike(value) || !(property in value)) {
+    return null;
+  }
+
+  const propertyValue = value[property as keyof typeof value];
+  return typeof propertyValue === "string" ? propertyValue : null;
+}
+
+function isObjectLike(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }

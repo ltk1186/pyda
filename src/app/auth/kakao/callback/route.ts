@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { sanitizeNextPath } from "@/lib/auth/redirect";
 import {
   exchangeKakaoAuthorizationCode,
+  getSupabaseAuthErrorDiagnostic,
   isValidKakaoCallbackState,
   kakaoOAuthClearCookieOptions,
   kakaoOAuthNextCookieName,
@@ -29,6 +30,12 @@ export async function GET(request: NextRequest) {
     !nonce ||
     !isValidKakaoCallbackState({ storedState, callbackState })
   ) {
+    logKakaoCallbackInvalidRequest({
+      hasCode: Boolean(code),
+      hasState: Boolean(callbackState),
+      hasNonceCookie: Boolean(nonce),
+      hasKakaoError: Boolean(kakaoError),
+    });
     return redirectToLogin(requestUrl, nextPath);
   }
 
@@ -40,6 +47,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (tokenResult.status !== "success") {
+      console.warn("kakao_token_exchange_failed", {
+        reason: tokenResult.reason,
+        httpStatus:
+          tokenResult.reason === "http" ? tokenResult.httpStatus : undefined,
+      });
       return redirectToLogin(requestUrl, nextPath);
     }
 
@@ -50,6 +62,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (error) {
+      console.warn(
+        "kakao_supabase_id_token_signin_failed",
+        getSupabaseAuthErrorDiagnostic(error),
+      );
       return redirectToLogin(requestUrl, nextPath);
     }
 
@@ -57,8 +73,18 @@ export async function GET(request: NextRequest) {
       NextResponse.redirect(new URL(nextPath, requestUrl.origin)),
     );
   } catch {
+    console.warn("kakao_callback_unexpected_error");
     return redirectToLogin(requestUrl, nextPath);
   }
+}
+
+function logKakaoCallbackInvalidRequest(input: {
+  hasCode: boolean;
+  hasState: boolean;
+  hasNonceCookie: boolean;
+  hasKakaoError: boolean;
+}) {
+  console.warn("kakao_callback_invalid_request", input);
 }
 
 function redirectToLogin(url: URL, nextPath: string) {
