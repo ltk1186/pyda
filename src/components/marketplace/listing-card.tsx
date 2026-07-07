@@ -10,7 +10,9 @@ type ListingCardProps = {
 };
 
 export function ListingCard({ listing }: ListingCardProps) {
-  const coverImage = listing.imagePaths[0] ?? "/images/samples/jeju-youtube-1.svg";
+  const coverImage =
+    listing.imagePaths[0] ??
+    "/images/samples/jeju-hanbakwi-youtube-integration.webp";
   const coverImageSrc = resolveImagePath(coverImage);
 
   return (

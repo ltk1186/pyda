@@ -1,12 +1,48 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import Home from "@/app/page";
 import { ListingCard } from "@/components/marketplace/listing-card";
 import { shouldShowSampleBadge } from "./badges";
-import { filterListings, getPublicListings, usesLocalSampleData } from "./data";
+import {
+  filterListings,
+  getPublicListingBySlug,
+  getPublicListings,
+  usesLocalSampleData,
+} from "./data";
 import { sampleListings } from "./sample-data";
 
 describe("marketplace public data", () => {
+  it("keeps eight sample listings across four creators", () => {
+    const listingCountByCreator = new Map<string, number>();
+
+    for (const listing of sampleListings) {
+      listingCountByCreator.set(
+        listing.creator.displayName,
+        (listingCountByCreator.get(listing.creator.displayName) ?? 0) + 1,
+      );
+    }
+
+    expect(sampleListings).toHaveLength(8);
+    expect(Array.from(listingCountByCreator.entries())).toEqual([
+      ["제주한바퀴", 2],
+      ["오늘의제주", 2],
+      ["살림의기록", 2],
+      ["한입서울", 2],
+    ]);
+  });
+
+  it("points every sample listing to an existing local sample image", () => {
+    for (const listing of sampleListings) {
+      expect(listing.imagePaths).toHaveLength(1);
+      expect(listing.imagePaths[0]).toMatch(/^\/images\/samples\/.+\.webp$/);
+      expect(
+        existsSync(join(process.cwd(), "public", listing.imagePaths[0])),
+      ).toBe(true);
+    }
+  });
+
   it("filters sample listings by platform", () => {
     const youtubeListings = filterListings(sampleListings, "YouTube");
 
@@ -32,6 +68,25 @@ describe("marketplace public data", () => {
       true,
     );
   });
+
+  it("loads a sample listing detail by slug when Supabase env is missing", async () => {
+    const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const previousKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    const listing = await getPublicListingBySlug("sample-food-instagram-post");
+
+    restoreEnv("NEXT_PUBLIC_SUPABASE_URL", previousUrl);
+    restoreEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", previousKey);
+
+    expect(listing?.creator.displayName).toBe("한입서울");
+    expect(listing?.title).toBe("서울 맛집 Instagram 피드 소개");
+    expect(listing?.imagePaths[0]).toBe(
+      "/images/samples/hanip-seoul-instagram-feed.webp",
+    );
+  });
+
 
   it("uses local sample data only when Supabase env is missing", () => {
     const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -66,7 +121,7 @@ describe("marketplace rendering", () => {
     );
 
     expect(html).toContain("예시 광고 상품");
-    expect(html).toContain("김지윤");
+    expect(html).toContain("제주한바퀴");
     expect(html).toContain("Founding Creator");
     expect(html).toContain("YouTube");
     expect(html).toContain("영상 내 30초 소개");
@@ -99,6 +154,6 @@ describe("marketplace rendering", () => {
     expect(html).toContain("Instagram");
     expect(html).toContain("네이버 블로그");
     expect(html).toContain("TikTok");
-    expect(html).toContain("TikTok 간편식 20초 맛보기");
+    expect(html).toContain("음식·간편식 TikTok 20초 숏폼");
   });
 });
