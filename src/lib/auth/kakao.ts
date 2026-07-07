@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 export const kakaoOAuthStateCookieName = "pyda_kakao_oauth_state";
 export const kakaoOAuthNonceCookieName = "pyda_kakao_oauth_nonce";
@@ -120,6 +120,10 @@ export function generateKakaoOAuthToken() {
   return randomBytes(randomTokenBytes).toString("base64url");
 }
 
+export function hashKakaoOAuthNonce(rawNonce: string) {
+  return createHash("sha256").update(rawNonce, "utf8").digest("hex");
+}
+
 export function kakaoOAuthCookieOptions() {
   return {
     httpOnly: true,
@@ -143,14 +147,14 @@ export function kakaoOAuthClearCookieOptions() {
 export function buildKakaoAuthorizeUrl(input: {
   config: KakaoOAuthConfig;
   state: string;
-  nonce: string;
+  hashedNonce: string;
 }) {
   const url = new URL(kakaoAuthorizeEndpoint);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", input.config.restApiKey);
   url.searchParams.set("redirect_uri", input.config.callbackUrl);
   url.searchParams.set("state", input.state);
-  url.searchParams.set("nonce", input.nonce);
+  url.searchParams.set("nonce", input.hashedNonce);
   url.searchParams.set("scope", kakaoOAuthScope);
   return url;
 }

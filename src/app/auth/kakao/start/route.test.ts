@@ -4,6 +4,7 @@ import {
   kakaoOAuthNextCookieName,
   kakaoOAuthNonceCookieName,
   kakaoOAuthStateCookieName,
+  hashKakaoOAuthNonce,
 } from "@/lib/auth/kakao";
 import { GET } from "./route";
 
@@ -22,6 +23,9 @@ describe("/auth/kakao/start", () => {
     );
 
     const location = response.headers.get("location");
+    const authorizeUrl = new URL(location ?? "");
+    const rawNonce = response.cookies.get(kakaoOAuthNonceCookieName)?.value;
+
     expect(location).toContain("https://kauth.kakao.com/oauth/authorize");
     expect(location).toContain("scope=openid%2Cprofile_nickname%2Cprofile_image");
     expect(location).not.toContain("account_email");
@@ -31,9 +35,11 @@ describe("/auth/kakao/start", () => {
     expect(response.cookies.get(kakaoOAuthStateCookieName)?.value).toHaveLength(
       43,
     );
-    expect(response.cookies.get(kakaoOAuthNonceCookieName)?.value).toHaveLength(
-      43,
+    expect(rawNonce).toHaveLength(43);
+    expect(authorizeUrl.searchParams.get("nonce")).toBe(
+      hashKakaoOAuthNonce(rawNonce ?? ""),
     );
+    expect(authorizeUrl.searchParams.get("nonce")).not.toBe(rawNonce);
   });
 
   it("falls back unsafe next paths to /", async () => {

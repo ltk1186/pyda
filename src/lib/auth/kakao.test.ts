@@ -8,6 +8,7 @@ import {
   exchangeKakaoAuthorizationCode,
   generateKakaoOAuthToken,
   getSupabaseAuthErrorDiagnostic,
+  hashKakaoOAuthNonce,
   isValidKakaoCallbackState,
   kakaoOAuthCookieOptions,
   kakaoOAuthScope,
@@ -71,6 +72,18 @@ describe("Kakao OAuth start", () => {
     expect(generateKakaoOAuthToken()).not.toBe(generateKakaoOAuthToken());
   });
 
+  it("hashes raw nonce as SHA-256 lowercase hexadecimal", () => {
+    const hash = hashKakaoOAuthNonce("raw-nonce");
+
+    expect(hash).toBe(
+      "2c5d107938053a2275f022c153c9a71f65ee07754b8bca543ee97a0c3cc66990",
+    );
+    expect(hash).toHaveLength(64);
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(hashKakaoOAuthNonce("raw-nonce")).toBe(hash);
+    expect(hashKakaoOAuthNonce("other-raw-nonce")).not.toBe(hash);
+  });
+
   it("uses short-lived HttpOnly SameSite=Lax cookies", () => {
     expect(kakaoOAuthCookieOptions()).toMatchObject({
       httpOnly: true,
@@ -81,10 +94,12 @@ describe("Kakao OAuth start", () => {
   });
 
   it("builds an authorization URL without account_email", () => {
+    const rawNonce = "raw-nonce";
+    const hashedNonce = hashKakaoOAuthNonce(rawNonce);
     const url = buildKakaoAuthorizeUrl({
       config,
       state: "state",
-      nonce: "nonce",
+      hashedNonce,
     });
 
     expect(url.searchParams.get("response_type")).toBe("code");
@@ -93,7 +108,8 @@ describe("Kakao OAuth start", () => {
       "http://localhost:3000/auth/kakao/callback",
     );
     expect(url.searchParams.get("state")).toBe("state");
-    expect(url.searchParams.get("nonce")).toBe("nonce");
+    expect(url.searchParams.get("nonce")).toBe(hashedNonce);
+    expect(url.searchParams.get("nonce")).not.toBe(rawNonce);
     expect(url.searchParams.get("scope")).toBe(kakaoOAuthScope);
     expect(url.search).toContain("openid");
     expect(url.search).toContain("profile_nickname");

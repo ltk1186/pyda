@@ -3,6 +3,7 @@ import { sanitizeNextPath } from "@/lib/auth/redirect";
 import {
   buildKakaoAuthorizeUrl,
   generateKakaoOAuthToken,
+  hashKakaoOAuthNonce,
   kakaoOAuthCookieOptions,
   kakaoOAuthNextCookieName,
   kakaoOAuthNonceCookieName,
@@ -16,13 +17,17 @@ export async function GET(request: NextRequest) {
 
   let authorizeUrl: URL;
   let state: string;
-  let nonce: string;
+  let rawNonce: string;
 
   try {
     const config = readKakaoOAuthConfig();
     state = generateKakaoOAuthToken();
-    nonce = generateKakaoOAuthToken();
-    authorizeUrl = buildKakaoAuthorizeUrl({ config, state, nonce });
+    rawNonce = generateKakaoOAuthToken();
+    authorizeUrl = buildKakaoAuthorizeUrl({
+      config,
+      state,
+      hashedNonce: hashKakaoOAuthNonce(rawNonce),
+    });
   } catch {
     return redirectToLogin(requestUrl, nextPath);
   }
@@ -30,7 +35,7 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(authorizeUrl);
   const cookieOptions = kakaoOAuthCookieOptions();
   response.cookies.set(kakaoOAuthStateCookieName, state, cookieOptions);
-  response.cookies.set(kakaoOAuthNonceCookieName, nonce, cookieOptions);
+  response.cookies.set(kakaoOAuthNonceCookieName, rawNonce, cookieOptions);
   response.cookies.set(kakaoOAuthNextCookieName, nextPath, cookieOptions);
   return response;
 }
