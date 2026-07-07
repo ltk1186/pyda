@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  getPublicHeaderProfileForUser,
+  PublicHeader,
+} from "@/components/navigation/public-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getAdvertiserRequests } from "@/lib/requests/data";
 import { formatRequestDate, formatRequestStatus } from "@/lib/requests";
@@ -14,19 +18,11 @@ export default async function AccountRequestsPage() {
   }
 
   const requests = await getAdvertiserRequests(user.id);
+  const headerProfile = await getPublicHeaderProfileForUser(user.id);
 
   return (
     <main className="min-h-screen bg-white text-neutral-950">
-      <header className="border-b border-neutral-200">
-        <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link className="text-lg font-semibold tracking-tight" href="/">
-            Pyda
-          </Link>
-          <Link className="text-sm text-neutral-600 hover:text-neutral-950" href="/">
-            전체 상품
-          </Link>
-        </div>
-      </header>
+      <PublicHeader currentPath="/account/requests" profile={headerProfile} />
 
       <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div>

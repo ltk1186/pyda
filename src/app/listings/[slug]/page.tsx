@@ -1,9 +1,12 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ListingGallery } from "@/components/marketplace/listing-gallery";
 import { RequestCta } from "@/components/marketplace/request-cta";
 import { SampleBadge } from "@/components/marketplace/sample-badge";
+import {
+  getPublicHeaderProfileForUser,
+  PublicHeader,
+} from "@/components/navigation/public-header";
 import { RequestForm } from "@/components/requests/request-form";
 import { getCurrentUser } from "@/lib/auth/session";
 import { shouldShowSampleBadge } from "@/lib/marketplace/badges";
@@ -41,6 +44,9 @@ export default async function ListingDetail({
   }
 
   const showRequestForm = requestIntent && Boolean(user);
+  const headerProfile = user
+    ? await getPublicHeaderProfileForUser(user.id)
+    : null;
   const ctaHref = user
     ? requestPath
     : `/login?next=${encodeURIComponent(requestPath)}`;
@@ -53,16 +59,10 @@ export default async function ListingDetail({
         showRequestForm ? "pb-10" : "pb-36 lg:pb-0"
       }`}
     >
-      <header className="border-b border-neutral-200">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link className="text-lg font-semibold tracking-tight" href="/">
-            Pyda
-          </Link>
-          <Link className="text-sm text-neutral-600 hover:text-neutral-950" href="/">
-            전체 상품
-          </Link>
-        </div>
-      </header>
+      <PublicHeader
+        currentPath={`/listings/${listing.slug}`}
+        profile={headerProfile}
+      />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <ListingGallery title={listing.title} imagePaths={listing.imagePaths} />

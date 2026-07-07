@@ -1,6 +1,9 @@
-import Link from "next/link";
 import { ListingCard } from "@/components/marketplace/listing-card";
 import { PlatformFilter } from "@/components/marketplace/platform-filter";
+import {
+  getPublicHeaderViewer,
+  PublicHeader,
+} from "@/components/navigation/public-header";
 import { getPublicListings } from "@/lib/marketplace/data";
 import { normalizePlatformFilter } from "@/lib/marketplace/format";
 
@@ -14,10 +17,15 @@ export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const activePlatform = normalizePlatformFilter(params.platform);
   const listings = await getPublicListings(activePlatform);
+  const headerProfile = await getPublicHeaderViewer();
+  const currentPath =
+    activePlatform === "전체"
+      ? "/"
+      : `/?platform=${encodeURIComponent(activePlatform)}`;
 
   return (
     <main className="min-h-screen bg-white text-neutral-950">
-      <Header />
+      <PublicHeader currentPath={currentPath} profile={headerProfile} />
 
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
@@ -74,19 +82,6 @@ export default async function Home({ searchParams }: HomeProps) {
 
       <Footer />
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="border-b border-neutral-200">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link className="text-lg font-semibold tracking-tight" href="/">
-          Pyda
-        </Link>
-        <p className="text-sm text-neutral-500">Creator ad marketplace</p>
-      </div>
-    </header>
   );
 }
 
