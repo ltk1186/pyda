@@ -240,6 +240,22 @@ export function creatorSelfManageBlockedMessage(status: string) {
     : "보관된 크리에이터는 자기 관리를 수정할 수 없습니다.";
 }
 
+export function creatorListingPublishBlockedMessage(input: {
+  creatorStatus: string;
+  creatorOnboardedAt: string | null;
+  nextListingStatus: string;
+}) {
+  if (
+    input.creatorStatus === "draft" &&
+    input.creatorOnboardedAt &&
+    input.nextListingStatus === "published"
+  ) {
+    return "등록 검토 중인 크리에이터는 광고 상품을 직접 공개할 수 없습니다.";
+  }
+
+  return null;
+}
+
 export function canCompleteCreatorOnboarding(input: {
   creatorStatus: string;
   onboardedAt: string | null;

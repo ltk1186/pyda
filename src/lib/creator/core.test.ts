@@ -8,6 +8,7 @@ import {
   canCreatorSelfManage,
   canCompleteCreatorOnboarding,
   canEditOwnedListing,
+  creatorListingPublishBlockedMessage,
   creatorSelfManageBlockedMessage,
   getPreviousStorageAvatarToCleanup,
   validateAvatarFile,
@@ -170,6 +171,23 @@ describe("creator listing self-management", () => {
     expect(canCreatorSelfManage("draft")).toBe(true);
     expect(canCreatorSelfManage("hidden")).toBe(true);
     expect(canCreatorSelfManage("published")).toBe(true);
+  });
+
+  it("blocks draft submitted creators from self-publishing listings", () => {
+    expect(
+      creatorListingPublishBlockedMessage({
+        creatorStatus: "draft",
+        creatorOnboardedAt: "2026-07-07T00:00:00.000Z",
+        nextListingStatus: "published",
+      }),
+    ).toBe("등록 검토 중인 크리에이터는 광고 상품을 직접 공개할 수 없습니다.");
+    expect(
+      creatorListingPublishBlockedMessage({
+        creatorStatus: "draft",
+        creatorOnboardedAt: null,
+        nextListingStatus: "published",
+      }),
+    ).toBeNull();
   });
 });
 

@@ -30,6 +30,14 @@ export type AdminListingDetail = AdminListingSummary & {
   description: string | null;
   deliverables: string[];
   publishedAt: string | null;
+  inventoryType: string | null;
+  placementFeeKrw: number | null;
+  productionFeeKrw: number | null;
+  optionKeys: string[];
+  turnaroundDays: number | null;
+  sourceContentUrl: string | null;
+  recent30dViews: number | null;
+  maintenanceDays: number | null;
 };
 
 export type AdminListingCreatorOption = {
@@ -55,6 +63,14 @@ type AdminListingRow = {
   status: ListingStatus;
   is_sample: boolean;
   published_at: string | null;
+  inventory_type: string | null;
+  placement_fee_krw: number | null;
+  production_fee_krw: number | null;
+  option_keys: string[] | null;
+  turnaround_days: number | null;
+  source_content_url: string | null;
+  recent_30d_views: number | null;
+  maintenance_days: number | null;
   created_at: string;
   creators:
     | {
@@ -83,6 +99,14 @@ const adminListingSelect = `
   status,
   is_sample,
   published_at,
+  inventory_type,
+  placement_fee_krw,
+  production_fee_krw,
+  option_keys,
+  turnaround_days,
+  source_content_url,
+  recent_30d_views,
+  maintenance_days,
   created_at,
   creators (
     display_name
@@ -173,5 +197,13 @@ function mapAdminListingDetail(row: AdminListingRow): AdminListingDetail {
     description: row.description,
     deliverables: row.deliverables ?? [],
     publishedAt: row.published_at,
+    inventoryType: row.inventory_type,
+    placementFeeKrw: row.placement_fee_krw,
+    productionFeeKrw: row.production_fee_krw,
+    optionKeys: row.option_keys ?? [],
+    turnaroundDays: row.turnaround_days,
+    sourceContentUrl: row.source_content_url,
+    recent30dViews: row.recent_30d_views,
+    maintenanceDays: row.maintenance_days,
   };
 }

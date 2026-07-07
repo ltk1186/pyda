@@ -8,6 +8,7 @@ import {
   getAdminListingCreatorOptions,
 } from "@/lib/admin/listings";
 import { formatListingStatus } from "@/lib/admin/listing-core";
+import { formatKrw } from "@/lib/marketplace/format";
 import { formatRequestDate } from "@/lib/requests";
 
 type AdminListingDetailPageProps = {
@@ -76,6 +77,72 @@ export default async function AdminListingDetailPage({
               />
             </dl>
           </section>
+
+          {listing.inventoryType ? (
+            <section className="rounded-lg border border-neutral-200 bg-white p-5">
+              <h2 className="text-base font-semibold">온보딩 신청 정보</h2>
+              <dl className="mt-5 space-y-4 text-sm">
+                <InfoItem
+                  label="광고 유형"
+                  value={
+                    listing.inventoryType === "new_content"
+                      ? "새 콘텐츠에 광고 넣기"
+                      : "기존 콘텐츠에 광고 붙이기"
+                  }
+                />
+                <InfoItem
+                  label="광고 자리값"
+                  value={
+                    listing.placementFeeKrw === null
+                      ? "-"
+                      : formatKrw(listing.placementFeeKrw)
+                  }
+                />
+                <InfoItem
+                  label="제작비"
+                  value={
+                    listing.productionFeeKrw === null
+                      ? "-"
+                      : formatKrw(listing.productionFeeKrw)
+                  }
+                />
+                {listing.turnaroundDays ? (
+                  <InfoItem
+                    label="제작 가능 기간"
+                    value={`${listing.turnaroundDays}일 이내`}
+                  />
+                ) : null}
+                {listing.sourceContentUrl ? (
+                  <InfoItem
+                    label="기존 콘텐츠 URL"
+                    value={listing.sourceContentUrl}
+                  />
+                ) : null}
+                {listing.recent30dViews !== null ? (
+                  <InfoItem
+                    label="최근 30일 조회수 또는 도달수"
+                    value={new Intl.NumberFormat("ko-KR").format(
+                      listing.recent30dViews,
+                    )}
+                  />
+                ) : null}
+                {listing.maintenanceDays ? (
+                  <InfoItem
+                    label="광고 유지 기간"
+                    value={`${listing.maintenanceDays}일`}
+                  />
+                ) : null}
+                <InfoItem
+                  label="선택 옵션"
+                  value={
+                    listing.optionKeys.length > 0
+                      ? listing.optionKeys.join(", ")
+                      : "없음"
+                  }
+                />
+              </dl>
+            </section>
+          ) : null}
 
           <section className="rounded-lg border border-neutral-200 bg-white p-5">
             <h2 className="text-base font-semibold">이번 단계 제외</h2>

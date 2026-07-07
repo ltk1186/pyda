@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ListingCard } from "@/components/marketplace/listing-card";
 import { PlatformFilter } from "@/components/marketplace/platform-filter";
 import {
@@ -66,6 +67,12 @@ export default async function Home({ searchParams }: HomeProps) {
               거쳐 Founding Creator로 확정됩니다. 확정된 크리에이터는 거래
               정산에서 더 낮은 실질 수수료를 적용받습니다.
             </p>
+            <Link
+              className="mt-5 inline-flex rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+              href="/creator/start"
+            >
+              크리에이터로 시작하기
+            </Link>
           </div>
           <div>
             <p className="text-sm font-semibold text-neutral-950">

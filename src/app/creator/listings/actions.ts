@@ -15,6 +15,7 @@ import { cleanupStorageObjects, uploadListingImages } from "@/lib/admin/storage"
 import {
   buildCreatorListingInsertPayload,
   buildCreatorListingUpdatePayload,
+  creatorListingPublishBlockedMessage,
   creatorSelfManageBlockedMessage,
   validateCreatorListingBase,
   type CreatorListingFormErrors,
@@ -63,6 +64,16 @@ export async function createCreatorListing(
 
   if (!parsed.ok) {
     return { errors: parsed.errors };
+  }
+
+  const publishBlockedMessage = creatorListingPublishBlockedMessage({
+    creatorStatus: creator.status,
+    creatorOnboardedAt: creator.onboardedAt,
+    nextListingStatus: parsed.data.status,
+  });
+
+  if (publishBlockedMessage) {
+    return { errors: { status: publishBlockedMessage } };
   }
 
   const listingId = crypto.randomUUID();
@@ -176,6 +187,16 @@ export async function updateCreatorListing(
 
   if (!parsed.ok) {
     return { errors: parsed.errors };
+  }
+
+  const publishBlockedMessage = creatorListingPublishBlockedMessage({
+    creatorStatus: creator.status,
+    creatorOnboardedAt: creator.onboardedAt,
+    nextListingStatus: parsed.data.status,
+  });
+
+  if (publishBlockedMessage) {
+    return { errors: { status: publishBlockedMessage } };
   }
 
   const uploaded = await uploadListingImages({

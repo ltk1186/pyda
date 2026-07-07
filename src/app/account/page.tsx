@@ -110,13 +110,12 @@ export default async function AccountPage() {
                 {creatorSummary.title}
               </p>
               <p className="mt-2">{creatorSummary.description}</p>
-              {"managementHref" in creatorSummary &&
-              creatorSummary.managementHref ? (
+              {"actionHref" in creatorSummary && creatorSummary.actionHref ? (
                 <Link
                   className="mt-5 inline-flex rounded-md border border-neutral-300 px-4 py-2 font-semibold text-neutral-950 hover:bg-neutral-50"
-                  href={creatorSummary.managementHref}
+                  href={creatorSummary.actionHref}
                 >
-                  내 광고 상품 관리
+                  {creatorSummary.actionLabel}
                 </Link>
               ) : null}
             </div>

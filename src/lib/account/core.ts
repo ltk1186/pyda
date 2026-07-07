@@ -20,6 +20,7 @@ export type RequestSummary = {
 export type CreatorActivitySummary = {
   status: CreatorStatus;
   displayName: string;
+  onboardedAt: string | null;
   publishedListingCount: number;
   nonArchivedListingCount: number;
 };
@@ -77,6 +78,26 @@ export function buildCreatorActivitySummary(
       title: "크리에이터 프로필 없음",
       description:
         "내 콘텐츠의 광고 자리를 판매해보세요. 유튜브나 인스타그램에서 제공할 광고 방식과 가격을 직접 정할 수 있습니다.",
+      actionHref: "/creator/start",
+      actionLabel: "크리에이터로 시작하기",
+    };
+  }
+
+  if (!creator.onboardedAt) {
+    return {
+      kind: "incomplete" as const,
+      title: "크리에이터 등록을 완료해주세요.",
+      description: "연결된 크리에이터 프로필의 직접 온보딩을 완료해야 합니다.",
+      actionHref: "/creator",
+      actionLabel: "이어서 작성하기",
+    };
+  }
+
+  if (creator.status === "draft") {
+    return {
+      kind: "review_pending" as const,
+      title: "등록 검토 중",
+      description: "채널과 광고 상품을 확인하고 있습니다.",
     };
   }
 
@@ -85,7 +106,8 @@ export function buildCreatorActivitySummary(
       kind: "published" as const,
       title: creator.displayName,
       description: `광고 상품 ${creator.nonArchivedListingCount}개 · 공개 중 ${creator.publishedListingCount}개`,
-      managementHref: "/creator",
+      actionHref: "/creator",
+      actionLabel: "내 광고 상품 관리",
     };
   }
 
@@ -93,7 +115,6 @@ export function buildCreatorActivitySummary(
     kind: "existing" as const,
     title: creator.displayName,
     description: creatorStatusDescription(creator.status),
-    managementHref: null,
   };
 }
 
