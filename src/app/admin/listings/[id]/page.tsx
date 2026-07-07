@@ -132,6 +132,18 @@ export default async function AdminListingDetailPage({
                     value={`${listing.maintenanceDays}일`}
                   />
                 ) : null}
+                {listing.mentionSeconds ? (
+                  <InfoItem
+                    label="직접 소개 시간"
+                    value={`${listing.mentionSeconds}초`}
+                  />
+                ) : null}
+                {listing.storyCount ? (
+                  <InfoItem
+                    label="추가 스토리"
+                    value={`${listing.storyCount}건`}
+                  />
+                ) : null}
                 <InfoItem
                   label="선택 옵션"
                   value={

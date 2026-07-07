@@ -38,6 +38,8 @@ export type AdminListingDetail = AdminListingSummary & {
   sourceContentUrl: string | null;
   recent30dViews: number | null;
   maintenanceDays: number | null;
+  mentionSeconds: number | null;
+  storyCount: number | null;
 };
 
 export type AdminListingCreatorOption = {
@@ -71,6 +73,8 @@ type AdminListingRow = {
   source_content_url: string | null;
   recent_30d_views: number | null;
   maintenance_days: number | null;
+  mention_seconds: number | null;
+  story_count: number | null;
   created_at: string;
   creators:
     | {
@@ -107,6 +111,8 @@ const adminListingSelect = `
   source_content_url,
   recent_30d_views,
   maintenance_days,
+  mention_seconds,
+  story_count,
   created_at,
   creators (
     display_name
@@ -205,5 +211,7 @@ function mapAdminListingDetail(row: AdminListingRow): AdminListingDetail {
     sourceContentUrl: row.source_content_url,
     recent30dViews: row.recent_30d_views,
     maintenanceDays: row.maintenance_days,
+    mentionSeconds: row.mention_seconds,
+    storyCount: row.story_count,
   };
 }

@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { CreatorSocialLinks } from "@/lib/admin/creator-core";
-import type { CreatorProfileFormState } from "@/app/creator/profile/actions";
+import type { CreatorProfileFormState } from "@/app/creator/(manage)/profile/actions";
 import { AvatarInput } from "./avatar-input";
 
 type CreatorProfileFormProps = {

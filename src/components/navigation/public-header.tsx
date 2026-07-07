@@ -27,23 +27,15 @@ export function PublicHeader({ currentPath, profile }: PublicHeaderProps) {
   return (
     <header className="border-b border-neutral-200 bg-white">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <nav className="flex min-w-0 items-center gap-5">
-          <Link className="text-lg font-semibold tracking-tight" href="/">
-            Pyda
-          </Link>
-          <Link
-            className="text-sm font-medium text-neutral-700 hover:text-neutral-950"
-            href="/account"
-          >
-            마이페이지
-          </Link>
-        </nav>
+        <Link className="text-lg font-semibold tracking-tight" href="/">
+          Pyda
+        </Link>
 
         {profile ? (
           <Link
             className="flex shrink-0 items-center gap-2 text-sm font-medium text-neutral-700 hover:text-neutral-950"
             href="/account"
-            aria-label="마이페이지로 이동"
+            aria-label="계정으로 이동"
           >
             {profile.avatarUrl ? (
               <Image
@@ -64,12 +56,20 @@ export function PublicHeader({ currentPath, profile }: PublicHeaderProps) {
             </span>
           </Link>
         ) : (
-          <Link
-            className="shrink-0 rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
-            href={buildLoginHref(currentPath)}
-          >
-            로그인
-          </Link>
+          <nav className="flex shrink-0 items-center gap-3">
+            <Link
+              className="text-sm font-medium text-neutral-700 hover:text-neutral-950"
+              href="/creator/start"
+            >
+              크리에이터 등록하기
+            </Link>
+            <Link
+              className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+              href={buildLoginHref(currentPath)}
+            >
+              로그인
+            </Link>
+          </nav>
         )}
       </div>
     </header>

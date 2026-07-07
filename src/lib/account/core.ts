@@ -79,7 +79,7 @@ export function buildCreatorActivitySummary(
       description:
         "내 콘텐츠의 광고 자리를 판매해보세요. 유튜브나 인스타그램에서 제공할 광고 방식과 가격을 직접 정할 수 있습니다.",
       actionHref: "/creator/start",
-      actionLabel: "크리에이터로 시작하기",
+      actions: [{ href: "/creator/start", label: "크리에이터로 시작하기" }],
     };
   }
 
@@ -89,7 +89,7 @@ export function buildCreatorActivitySummary(
       title: "크리에이터 등록을 완료해주세요.",
       description: "연결된 크리에이터 프로필의 직접 온보딩을 완료해야 합니다.",
       actionHref: "/creator",
-      actionLabel: "이어서 작성하기",
+      actions: [{ href: "/creator", label: "이어서 작성하기" }],
     };
   }
 
@@ -106,8 +106,11 @@ export function buildCreatorActivitySummary(
       kind: "published" as const,
       title: creator.displayName,
       description: `광고 상품 ${creator.nonArchivedListingCount}개 · 공개 중 ${creator.publishedListingCount}개`,
-      actionHref: "/creator",
-      actionLabel: "내 광고 상품 관리",
+      actionHref: "/creator/listings",
+      actions: [
+        { href: "/creator/profile", label: "프로필 관리" },
+        { href: "/creator/listings", label: "내 광고 상품" },
+      ],
     };
   }
 

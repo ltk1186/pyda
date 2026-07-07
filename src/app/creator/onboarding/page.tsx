@@ -34,7 +34,7 @@ export default async function CreatorOnboardingPage() {
           크리에이터 등록
         </h1>
         <p className="mt-2 text-sm leading-6 text-neutral-600">
-          채널 하나와 첫 광고 상품 하나를 등록 신청합니다.
+          운영하는 채널을 입력하고 첫 광고 상품 하나를 등록 신청합니다.
         </p>
         <div className="mt-8">
           <CreatorOnboardingForm action={submitCreatorOnboarding} />

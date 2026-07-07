@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import type { OnboardingCompleteState } from "@/app/creator/actions";
+import type { OnboardingCompleteState } from "@/app/creator/(manage)/actions";
 
 type OnboardingCompleteFormProps = {
   action: (

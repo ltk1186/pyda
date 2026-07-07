@@ -9,7 +9,7 @@ import {
   type ListingPlatform,
   type ListingStatus,
 } from "@/lib/admin/listing-core";
-import type { CreatorListingFormState } from "@/app/creator/listings/actions";
+import type { CreatorListingFormState } from "@/app/creator/(manage)/listings/actions";
 import { ListingImageInput } from "@/components/admin/listing-image-input";
 
 type CreatorListingFormProps = {

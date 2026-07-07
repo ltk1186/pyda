@@ -40,17 +40,22 @@ export async function submitCreatorOnboarding(
 
   const parsed = validateCreatorOnboardingInput({
     displayName: formData.get("displayName"),
-    platform: formData.get("platform"),
-    channelUrl: formData.get("channelUrl"),
-    audienceSize: formData.get("audienceSize"),
+    youtubeName: formData.get("youtubeName"),
+    youtubeUrl: formData.get("youtubeUrl"),
+    youtubeAudienceSize: formData.get("youtubeAudienceSize"),
+    instagramName: formData.get("instagramName"),
+    instagramUrl: formData.get("instagramUrl"),
+    instagramAudienceSize: formData.get("instagramAudienceSize"),
+    selectedPlatform: formData.get("selectedPlatform"),
     bio: formData.get("bio"),
     inventoryType: formData.get("inventoryType"),
     optionKeys: formData.getAll("optionKeys"),
-    placementFeeKrw: formData.get("placementFeeKrw"),
-    productionFeeKrw: formData.get("productionFeeKrw"),
+    placementFeeManwon: formData.get("placementFeeManwon"),
+    productionFeeManwon: formData.get("productionFeeManwon"),
     turnaroundDays: formData.get("turnaroundDays"),
-    sourceContentUrl: formData.get("sourceContentUrl"),
-    recent30dViews: formData.get("recent30dViews"),
+    maintenanceDays: formData.get("maintenanceDays"),
+    mentionSeconds: formData.get("mentionSeconds"),
+    storyCount: formData.get("storyCount"),
   });
 
   if (!parsed.ok) {
@@ -67,7 +72,7 @@ export async function submitCreatorOnboarding(
   const listingId = crypto.randomUUID();
   const creatorSlug = buildGeneratedCreatorSlug(creatorId);
   const listingSlug = buildGeneratedListingSlug({
-    platform: parsed.data.platform,
+    platform: parsed.data.selectedPlatform,
     inventoryType: parsed.data.inventoryType,
     randomId: listingId,
   });
@@ -107,6 +112,9 @@ export async function submitCreatorOnboarding(
 
   if (creatorError) {
     await cleanupStorageObjects(uploadedPaths);
+    console.error("creator_onboarding_creator_insert_failed", {
+      code: creatorError.code ?? null,
+    });
     return {
       message: isOwnerUniqueError(creatorError)
         ? "이미 연결된 크리에이터 프로필이 있습니다."
@@ -121,6 +129,9 @@ export async function submitCreatorOnboarding(
   if (listingError) {
     await cleanupStorageObjects(uploadedPaths);
     await supabase.from("creators").delete().eq("id", creatorId);
+    console.error("creator_onboarding_listing_insert_failed", {
+      code: listingError.code ?? null,
+    });
     return { message: "첫 광고 상품을 저장하지 못했습니다." };
   }
 

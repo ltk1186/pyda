@@ -63,6 +63,7 @@ describe("account core", () => {
       kind: "none",
       title: "크리에이터 프로필 없음",
       actionHref: "/creator/start",
+      actions: [{ href: "/creator/start", label: "크리에이터로 시작하기" }],
     });
   });
 
@@ -80,7 +81,7 @@ describe("account core", () => {
       title: "크리에이터 등록을 완료해주세요.",
       description: "연결된 크리에이터 프로필의 직접 온보딩을 완료해야 합니다.",
       actionHref: "/creator",
-      actionLabel: "이어서 작성하기",
+      actions: [{ href: "/creator", label: "이어서 작성하기" }],
     });
   });
 
@@ -112,8 +113,11 @@ describe("account core", () => {
       kind: "published",
       title: "오늘의제주",
       description: "광고 상품 2개 · 공개 중 1개",
-      actionHref: "/creator",
-      actionLabel: "내 광고 상품 관리",
+      actionHref: "/creator/listings",
+      actions: [
+        { href: "/creator/profile", label: "프로필 관리" },
+        { href: "/creator/listings", label: "내 광고 상품" },
+      ],
     });
   });
 

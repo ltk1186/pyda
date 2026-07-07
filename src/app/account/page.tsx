@@ -9,6 +9,7 @@ import {
 } from "@/lib/account/core";
 import { getAccountOverview } from "@/lib/account/data";
 import { getCurrentUser } from "@/lib/auth/session";
+import { signOutAccount } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,14 @@ export default async function AccountPage() {
                 <p className="mt-1 text-sm text-neutral-600">카카오로 로그인</p>
               </div>
             </div>
+            <form action={signOutAccount} className="mt-5">
+              <button
+                className="text-sm font-medium text-neutral-600 hover:text-neutral-950"
+                type="submit"
+              >
+                로그아웃
+              </button>
+            </form>
           </section>
 
           <section className="rounded-lg border border-neutral-200 p-5">
@@ -111,12 +120,17 @@ export default async function AccountPage() {
               </p>
               <p className="mt-2">{creatorSummary.description}</p>
               {"actionHref" in creatorSummary && creatorSummary.actionHref ? (
-                <Link
-                  className="mt-5 inline-flex rounded-md border border-neutral-300 px-4 py-2 font-semibold text-neutral-950 hover:bg-neutral-50"
-                  href={creatorSummary.actionHref}
-                >
-                  {creatorSummary.actionLabel}
-                </Link>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {creatorSummary.actions.map((action) => (
+                    <Link
+                      className="inline-flex rounded-md border border-neutral-300 px-4 py-2 font-semibold text-neutral-950 hover:bg-neutral-50"
+                      href={action.href}
+                      key={action.href}
+                    >
+                      {action.label}
+                    </Link>
+                  ))}
+                </div>
               ) : null}
             </div>
           </section>

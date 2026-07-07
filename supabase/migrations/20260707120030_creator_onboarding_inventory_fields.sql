@@ -1,3 +1,11 @@
+alter table public.creators
+  add column channel_profiles jsonb not null default '{}'::jsonb;
+
+alter table public.creators
+  add constraint creators_channel_profiles_object check (
+    jsonb_typeof(channel_profiles) = 'object'
+  );
+
 alter table public.listings
   add column inventory_type text,
   add column placement_fee_krw integer,
@@ -6,7 +14,9 @@ alter table public.listings
   add column turnaround_days integer,
   add column source_content_url text,
   add column recent_30d_views integer,
-  add column maintenance_days integer;
+  add column maintenance_days integer,
+  add column mention_seconds integer,
+  add column story_count integer;
 
 alter table public.listings
   add constraint listings_inventory_type_allowed check (
@@ -26,7 +36,11 @@ alter table public.listings
       'coupon_code',
       'dedicated_link',
       'brand_badge',
-      'story_3'
+      'story_3',
+      'pinned_comment',
+      'description_top',
+      'profile_link',
+      'highlight'
     ]::text[]
   ),
   add constraint listings_turnaround_days_allowed check (
@@ -36,7 +50,13 @@ alter table public.listings
     recent_30d_views is null or recent_30d_views >= 0
   ),
   add constraint listings_maintenance_days_allowed check (
-    maintenance_days is null or maintenance_days = 30
+    maintenance_days is null or maintenance_days between 1 and 365
+  ),
+  add constraint listings_mention_seconds_allowed check (
+    mention_seconds is null or mention_seconds in (15, 30, 60)
+  ),
+  add constraint listings_story_count_allowed check (
+    story_count is null or story_count in (1, 2, 3)
   ),
   add constraint listings_structured_price_matches_total check (
     inventory_type is null
@@ -53,6 +73,14 @@ alter table public.listings
       and source_content_url is null
       and recent_30d_views is null
       and maintenance_days is null
+      and (
+        mention_seconds is null
+        or platform = 'YouTube'
+      )
+      and (
+        story_count is null
+        or platform = 'Instagram'
+      )
     )
   ),
   add constraint listings_existing_traffic_fields_consistent check (
@@ -60,9 +88,9 @@ alter table public.listings
     or (
       production_fee_krw = 0
       and turnaround_days is null
-      and source_content_url is not null
-      and recent_30d_views is not null
-      and maintenance_days = 30
+      and maintenance_days is not null
+      and mention_seconds is null
+      and story_count is null
     )
   );
 

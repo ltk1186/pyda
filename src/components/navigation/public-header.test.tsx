@@ -3,16 +3,17 @@ import { describe, expect, it } from "vitest";
 import { PublicHeader } from "./public-header";
 
 describe("PublicHeader", () => {
-  it("shows My Page and login for signed-out users", () => {
+  it("shows creator registration and login for signed-out users", () => {
     const html = renderToStaticMarkup(
       <PublicHeader currentPath="/listings/sample" profile={null} />,
     );
 
     expect(html).toContain('href="/"');
     expect(html).toContain(">Pyda<");
-    expect(html).toContain('href="/account"');
-    expect(html).toContain("마이페이지");
+    expect(html).toContain('href="/creator/start"');
+    expect(html).toContain("크리에이터 등록하기");
     expect(html).toContain("로그인");
+    expect(html).not.toContain("마이페이지");
     expect(html).toContain(
       'href="/login?next=%2Flistings%2Fsample"',
     );
@@ -26,8 +27,10 @@ describe("PublicHeader", () => {
       />,
     );
 
-    expect(html).toContain("마이페이지");
     expect(html).not.toContain(">로그인<");
+    expect(html).not.toContain("마이페이지");
+    expect(html).not.toContain("크리에이터 등록하기");
+    expect(html).not.toContain("로그아웃");
     expect(html).toContain("오늘의제주");
     expect(html).toContain(">오<");
   });
