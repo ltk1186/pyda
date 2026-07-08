@@ -5,6 +5,7 @@ const requestSelect = `
   id,
   listing_id,
   brand_name,
+  contact_channel,
   campaign_brief,
   preferred_start_date,
   preferred_end_date,
@@ -24,6 +25,7 @@ export type AdvertiserRequest = {
   listingTitle: string;
   listingSlug: string | null;
   brandName: string;
+  contactChannel: string;
   campaignBrief: string;
   preferredStartDate: string | null;
   preferredEndDate: string | null;
@@ -35,6 +37,7 @@ type RequestRow = {
   id: string;
   listing_id: string;
   brand_name: string;
+  contact_channel: string;
   campaign_brief: string;
   preferred_start_date: string | null;
   preferred_end_date: string | null;
@@ -96,6 +99,7 @@ function mapRequestRow(row: RequestRow): AdvertiserRequest {
     listingTitle: listing?.title ?? "현재 비공개인 광고 상품",
     listingSlug: listing?.slug ?? null,
     brandName: row.brand_name,
+    contactChannel: row.contact_channel,
     campaignBrief: row.campaign_brief,
     preferredStartDate: row.preferred_start_date,
     preferredEndDate: row.preferred_end_date,

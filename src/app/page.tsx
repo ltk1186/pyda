@@ -39,6 +39,25 @@ export default async function Home({ searchParams }: HomeProps) {
           </p>
         </div>
 
+        <section className="mt-8 rounded-lg border border-neutral-200 p-5">
+          <h2 className="text-lg font-semibold tracking-tight">
+            이런 식으로 광고할 수 있어요
+          </h2>
+          <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+            {advertisingExamples.map((example) => (
+              <div key={example.title}>
+                <p className="font-medium text-neutral-950">{example.title}</p>
+                <p className="mt-2 leading-6 text-neutral-600">
+                  {example.description}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-sm leading-6 text-neutral-600">
+            광고 상품 선택 → 요청 보내기 → 카카오톡이나 전화로 바로 조율
+          </p>
+        </section>
+
         <div className="mt-7">
           <PlatformFilter activePlatform={activePlatform} />
         </div>
@@ -91,6 +110,21 @@ export default async function Home({ searchParams }: HomeProps) {
     </main>
   );
 }
+
+const advertisingExamples = [
+  {
+    title: "제주 카페",
+    description: "여행 유튜버의 제주 영상 안에서 30초 소개",
+  },
+  {
+    title: "생활용품 브랜드",
+    description: "살림 Instagram 계정에서 사용 릴스 1편",
+  },
+  {
+    title: "앱 서비스",
+    description: "기존 YouTube 영상 설명란 상단에 링크 노출",
+  },
+];
 
 function Footer() {
   return (

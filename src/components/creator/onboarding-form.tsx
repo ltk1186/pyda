@@ -9,10 +9,12 @@ import {
 } from "@/lib/admin/listing-core";
 import type { CreatorOnboardingFormState } from "@/app/creator/onboarding/actions";
 import {
+  applyRecommendedOnboardingPriceValues,
   calculateOnboardingTotalPrice,
   getAllowedOnboardingOptions,
   getOnboardingErrorStep,
   getOnboardingTemplate,
+  inferOnboardingSelectedPlatform,
   onboardingMentionSeconds,
   onboardingOptionLabels,
   onboardingStoryCounts,
@@ -51,6 +53,8 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
   const [optionKeys, setOptionKeys] = useState<OnboardingOptionKey[]>([]);
   const [placementFeeManwon, setPlacementFeeManwon] = useState("");
   const [productionFeeManwon, setProductionFeeManwon] = useState("");
+  const [placementFeeTouched, setPlacementFeeTouched] = useState(false);
+  const [productionFeeTouched, setProductionFeeTouched] = useState(false);
   const [turnaroundDays, setTurnaroundDays] = useState("14");
   const [maintenanceDays, setMaintenanceDays] = useState("14");
   const [mentionSeconds, setMentionSeconds] = useState("15");
@@ -155,6 +159,10 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
         }).includes(optionKey),
       ),
     );
+
+    if (step === 3) {
+      applyRecommendedPrices(nextPlatform, inventoryType);
+    }
   }
 
   function changeInventoryType(nextInventoryType: OnboardingInventoryType) {
@@ -167,6 +175,57 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
         }).includes(optionKey),
       ),
     );
+
+    if (step === 3) {
+      applyRecommendedPrices(selectedPlatform, nextInventoryType);
+    }
+  }
+
+  function applyRecommendedPrices(
+    platform: OnboardingPlatform,
+    nextInventoryType: OnboardingInventoryType,
+  ) {
+    const recommended = applyRecommendedOnboardingPriceValues({
+      currentPlacementFeeManwon: placementFeeManwon,
+      currentProductionFeeManwon: productionFeeManwon,
+      placementFeeTouched,
+      productionFeeTouched,
+      platform,
+      inventoryType: nextInventoryType,
+    });
+
+    setPlacementFeeManwon(recommended.placementFeeManwon);
+    setProductionFeeManwon(recommended.productionFeeManwon);
+  }
+
+  function goToNextStep() {
+    if (step === 1) {
+      const inferredPlatform = inferOnboardingSelectedPlatform({
+        current: selectedPlatform,
+        youtubeComplete: isCompleteChannel({
+          name: youtubeName,
+          url: youtubeUrl,
+          audienceSize: youtubeAudienceSize,
+        }),
+        instagramComplete: isCompleteChannel({
+          name: instagramName,
+          url: instagramUrl,
+          audienceSize: instagramAudienceSize,
+        }),
+      });
+
+      if (inferredPlatform !== selectedPlatform) {
+        changePlatform(inferredPlatform);
+      }
+
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      applyRecommendedPrices(selectedPlatform, inventoryType);
+      setStep(3);
+    }
   }
 
   return (
@@ -250,7 +309,10 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
       </section>
 
       <section className={step === 2 ? "space-y-5" : "hidden"}>
-        <SectionTitle title="어떤 방식으로 광고할 수 있나요?" />
+        <SectionTitle
+          title="어떤 방식으로 광고할 수 있나요?"
+          description="영상 전체를 광고로 만들 필요는 없습니다. 지금 만드는 콘텐츠 안의 일부 자리나 이미 운영 중인 채널의 광고 자리도 팔 수 있습니다."
+        />
         <ChoiceCards
           label="이번에 첫 광고 상품을 등록할 채널"
           name="selectedPlatform"
@@ -287,6 +349,9 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
         />
 
         <div className="rounded-lg border border-neutral-200 p-5">
+          <p className="mb-3 text-sm font-medium text-neutral-950">
+            예: {template.example}
+          </p>
           <h3 className="text-lg font-semibold">{template.heading}</h3>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
             {template.description}
@@ -390,7 +455,10 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
           error={state.errors?.placementFeeManwon}
           label="광고 자리값"
           name="placementFeeManwon"
-          onChange={setPlacementFeeManwon}
+          onChange={(value) => {
+            setPlacementFeeTouched(true);
+            setPlacementFeeManwon(value);
+          }}
           value={placementFeeManwon}
         />
         {inventoryType === "new_content" ? (
@@ -400,7 +468,10 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
               error={state.errors?.productionFeeManwon}
               label="제작비"
               name="productionFeeManwon"
-              onChange={setProductionFeeManwon}
+              onChange={(value) => {
+                setProductionFeeTouched(true);
+                setProductionFeeManwon(value);
+              }}
               value={productionFeeManwon}
             />
             <div>
@@ -451,6 +522,10 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
             </div>
           </>
         )}
+
+        <p className="text-sm leading-6 text-neutral-600">
+          처음 정하는 희망 가격입니다. 실제 광고 내용과 조건에 따라 광고주와 조율할 수 있습니다.
+        </p>
 
         <div>
           <label className="text-sm font-medium text-neutral-950" htmlFor="coverImage">
@@ -529,7 +604,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
         {step < 3 ? (
           <button
             className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-            onClick={() => setStep((current) => Math.min(3, current + 1))}
+            onClick={goToNextStep}
             type="button"
           >
             다음
@@ -664,7 +739,7 @@ function ManwonField({
         <input
           className="min-w-0 flex-1 px-3 py-2 text-sm outline-none"
           id={name}
-          inputMode="numeric"
+          inputMode="decimal"
           name={name}
           onChange={(event) => onChange(event.target.value)}
           type="text"
@@ -859,7 +934,10 @@ function FieldError({ message }: { message?: string | null }) {
 
 function manwonToKrw(value: string) {
   const number = Number(value);
-  return Number.isInteger(number) && number > 0 ? number * 10_000 : 0;
+  const krw = number * 10_000;
+  return Number.isFinite(number) && Number.isSafeInteger(krw) && number >= 0
+    ? krw
+    : 0;
 }
 
 function formatKrw(value: number) {
@@ -867,12 +945,19 @@ function formatKrw(value: number) {
     return `${new Intl.NumberFormat("ko-KR").format(value / 10_000)}만원`;
   }
 
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: "KRW",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return `${new Intl.NumberFormat("ko-KR").format(value)}원`;
 }
+
+function isCompleteChannel(input: {
+  name: string;
+  url: string;
+  audienceSize: string;
+}) {
+  return Boolean(
+    input.name.trim() && input.url.trim() && input.audienceSize.trim(),
+  );
+}
+
 
 async function resizeImage(file: File) {
   const image = await createImageBitmap(file);

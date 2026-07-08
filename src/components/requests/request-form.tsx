@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { contactChannels } from "@/lib/requests";
+import { newRequestContactChannels } from "@/lib/requests";
 import type { RequestFormState } from "@/app/listings/[slug]/actions";
 
 type RequestFormProps = {
@@ -59,7 +59,7 @@ export function RequestForm({ action }: RequestFormProps) {
             required
           >
             <option value="">선택해주세요</option>
-            {contactChannels.map((channel) => (
+            {newRequestContactChannels.map((channel) => (
               <option key={channel} value={channel}>
                 {channel}
               </option>
@@ -70,9 +70,11 @@ export function RequestForm({ action }: RequestFormProps) {
 
         <TextField
           error={state.errors?.contactValue}
-          label="연락처"
+          label="휴대전화번호"
           name="contactValue"
+          placeholder="카카오톡을 선택해도 fallback 연락처로 사용합니다."
           required
+          type="tel"
         />
 
         <div>
@@ -122,6 +124,7 @@ type TextFieldProps = {
   error?: string;
   label: string;
   name: string;
+  placeholder?: string;
   required?: boolean;
   type?: string;
 };
@@ -130,6 +133,7 @@ function TextField({
   error,
   label,
   name,
+  placeholder,
   required = false,
   type = "text",
 }: TextFieldProps) {
@@ -142,6 +146,7 @@ function TextField({
         className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-3 text-sm outline-none focus:border-neutral-950"
         id={name}
         name={name}
+        placeholder={placeholder}
         required={required}
         type={type}
       />

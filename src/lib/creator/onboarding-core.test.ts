@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyRecommendedOnboardingPriceValues,
   buildCreatorOnboardingCreatorPayload,
   buildCreatorOnboardingListingPayload,
   buildGeneratedCreatorSlug,
   buildGeneratedListingSlug,
   calculateOnboardingTotalPrice,
   getOnboardingErrorStep,
+  getRecommendedOnboardingPrice,
   getOnboardingTemplate,
+  inferOnboardingSelectedPlatform,
+  parseOnboardingManwonToKrw,
   validateCreatorOnboardingInput,
   validateOnboardingOptions,
 } from "./onboarding-core";
@@ -36,9 +40,10 @@ describe("creator onboarding templates", () => {
     expect(getOnboardingTemplate("YouTube", "new_content")).toMatchObject({
       heading: "새 영상 안에서 직접 소개하기",
       baseDeliverables: [
-        "영상 안에서 creator가 직접 소개",
+        "영상 안에서 크리에이터가 직접 소개",
         "매장명, 혜택 또는 링크를 화면에 표시",
       ],
+      example: "제주 여행 영상 안에서 카페를 30초 소개",
     });
     expect(getOnboardingTemplate("Instagram", "new_content")).toMatchObject({
       heading: "새 릴스로 방문이나 사용 경험 소개하기",
@@ -75,6 +80,11 @@ describe("creator onboarding validation and payloads", () => {
     expect(result.data.placementFeeKrw).toBe(300000);
     expect(result.data.productionFeeKrw).toBe(100000);
     expect(calculateOnboardingTotalPrice(result.data)).toBe(400000);
+  });
+
+  it("converts 0.5 manwon to 5,000 KRW and 99 manwon to 990,000 KRW", () => {
+    expect(parseOnboardingManwonToKrw("0.5")).toBe(5000);
+    expect(parseOnboardingManwonToKrw("99")).toBe(990000);
   });
 
   it("accepts Instagram only", () => {
@@ -181,8 +191,8 @@ describe("creator onboarding validation and payloads", () => {
     }
   });
 
-  it("rejects zero, negative, and decimal manwon price inputs", () => {
-    for (const value of ["0", "-1", "3.5"]) {
+  it("rejects out-of-range or invalid manwon price inputs", () => {
+    for (const value of ["0", "-1", "3.7", "99.5", "100"]) {
       const result = validateCreatorOnboardingInput({
         ...baseInput,
         placementFeeManwon: value,
@@ -193,6 +203,54 @@ describe("creator onboarding validation and payloads", () => {
         expect(result.errors.placementFeeManwon).toBeTruthy();
       }
     }
+  });
+
+  it("allows 0.5 manwon increments and recomputes total price", () => {
+    const result = validateCreatorOnboardingInput({
+      ...baseInput,
+      placementFeeManwon: "0.5",
+      productionFeeManwon: "0.5",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.data.placementFeeKrw).toBe(5000);
+    expect(result.data.productionFeeKrw).toBe(5000);
+    expect(calculateOnboardingTotalPrice(result.data)).toBe(10000);
+  });
+
+  it("provides recommended prices by platform and product", () => {
+    expect(
+      getRecommendedOnboardingPrice({
+        platform: "YouTube",
+        inventoryType: "new_content",
+      }),
+    ).toEqual({ placementFeeManwon: "10", productionFeeManwon: "20" });
+    expect(
+      getRecommendedOnboardingPrice({
+        platform: "Instagram",
+        inventoryType: "existing_traffic",
+      }),
+    ).toEqual({ placementFeeManwon: "1", productionFeeManwon: "0" });
+  });
+
+  it("does not overwrite manually edited recommended prices", () => {
+    expect(
+      applyRecommendedOnboardingPriceValues({
+        currentPlacementFeeManwon: "77",
+        currentProductionFeeManwon: "11",
+        placementFeeTouched: true,
+        productionFeeTouched: true,
+        platform: "Instagram",
+        inventoryType: "new_content",
+      }),
+    ).toEqual({
+      placementFeeManwon: "77",
+      productionFeeManwon: "11",
+    });
   });
 
   it("builds direct onboarding creator payload with channel profiles", () => {
@@ -271,8 +329,33 @@ describe("creator onboarding validation and payloads", () => {
 
   it("routes validation errors to the correct step", () => {
     expect(getOnboardingErrorStep({ youtubeUrl: "missing" })).toBe(1);
+    expect(getOnboardingErrorStep({ selectedPlatform: "missing" })).toBe(2);
     expect(getOnboardingErrorStep({ optionKeys: "bad" })).toBe(2);
     expect(getOnboardingErrorStep({ placementFeeManwon: "bad" })).toBe(3);
+  });
+
+  it("infers the selected platform from completed channel data", () => {
+    expect(
+      inferOnboardingSelectedPlatform({
+        current: "YouTube",
+        youtubeComplete: false,
+        instagramComplete: true,
+      }),
+    ).toBe("Instagram");
+    expect(
+      inferOnboardingSelectedPlatform({
+        current: "Instagram",
+        youtubeComplete: true,
+        instagramComplete: false,
+      }),
+    ).toBe("YouTube");
+    expect(
+      inferOnboardingSelectedPlatform({
+        current: "Instagram",
+        youtubeComplete: true,
+        instagramComplete: true,
+      }),
+    ).toBe("Instagram");
   });
 
   it("generates safe slugs without user-provided slug input", () => {

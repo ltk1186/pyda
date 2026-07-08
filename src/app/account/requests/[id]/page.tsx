@@ -11,6 +11,7 @@ import {
   formatRequestDate,
   formatRequestStatus,
 } from "@/lib/requests";
+import { readKakaoOpenChatUrl } from "@/lib/requests/open-chat";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function AccountRequestDetailPage({
   }
 
   const headerProfile = await getPublicHeaderProfileForUser(user.id);
+  const kakaoOpenChatUrl = readKakaoOpenChatUrl();
 
   return (
     <main className="min-h-screen bg-white text-neutral-950">
@@ -65,6 +67,34 @@ export default async function AccountRequestDetailPage({
             요청일 {formatRequestDate(request.createdAt)}
           </p>
         </div>
+
+        {request.contactChannel === "카카오톡" && kakaoOpenChatUrl ? (
+          <section className="mt-6 rounded-lg border border-neutral-200 bg-neutral-50 p-5">
+            <p className="text-base font-semibold text-neutral-950">
+              요청이 접수되었습니다.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              바로 Pyda와 카카오톡으로 이야기하면서 일정과 조건을 조율할 수 있습니다.
+            </p>
+            <Link
+              className="mt-5 inline-flex rounded-md bg-neutral-950 px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
+              href={kakaoOpenChatUrl}
+            >
+              카카오톡으로 바로 이야기하기
+            </Link>
+          </section>
+        ) : null}
+
+        {request.contactChannel === "전화" ? (
+          <section className="mt-6 rounded-lg border border-neutral-200 bg-neutral-50 p-5">
+            <p className="text-base font-semibold text-neutral-950">
+              요청이 접수되었습니다.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              남겨주신 휴대전화번호로 연락드릴게요.
+            </p>
+          </section>
+        ) : null}
 
         <dl className="mt-8 grid gap-6 text-sm sm:grid-cols-2">
           <div>

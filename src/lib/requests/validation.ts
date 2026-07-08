@@ -1,11 +1,15 @@
-export const contactChannels = [
+export const newRequestContactChannels = ["카카오톡", "전화"] as const;
+export const persistedContactChannels = [
   "카카오톡",
+  "전화",
   "전화 또는 문자",
   "이메일",
   "WhatsApp",
 ] as const;
 
-export type ContactChannel = (typeof contactChannels)[number];
+export type NewRequestContactChannel =
+  (typeof newRequestContactChannels)[number];
+export type ContactChannel = (typeof persistedContactChannels)[number];
 
 export type RequestFormInput = {
   brandName: string;
@@ -58,7 +62,7 @@ export function validateRequestForm(input: Record<string, string | null>) {
     errors.contactName = "담당자명을 입력해주세요.";
   }
 
-  if (!isContactChannel(contactChannel)) {
+  if (!isNewRequestContactChannel(contactChannel)) {
     errors.contactChannel = "선호 연락 방식을 선택해주세요.";
   }
 
@@ -91,7 +95,10 @@ export function validateRequestForm(input: Record<string, string | null>) {
     errors.preferredEndDate = "희망 종료일은 시작일 이후여야 합니다.";
   }
 
-  if (Object.keys(errors).length > 0 || !isContactChannel(contactChannel)) {
+  if (
+    Object.keys(errors).length > 0 ||
+    !isNewRequestContactChannel(contactChannel)
+  ) {
     return {
       ok: false as const,
       errors,
@@ -133,8 +140,16 @@ export function buildRequestInsertPayload(
   };
 }
 
-function isContactChannel(value: string | null): value is ContactChannel {
-  return contactChannels.includes(value as ContactChannel);
+export function isPersistedContactChannel(
+  value: string | null,
+): value is ContactChannel {
+  return persistedContactChannels.includes(value as ContactChannel);
+}
+
+function isNewRequestContactChannel(
+  value: string | null,
+): value is NewRequestContactChannel {
+  return newRequestContactChannels.includes(value as NewRequestContactChannel);
 }
 
 function stringValue(value: FormDataEntryValue | null) {

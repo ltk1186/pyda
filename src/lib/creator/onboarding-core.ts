@@ -42,6 +42,7 @@ export type OnboardingChannelProfiles = Partial<
 export type OnboardingTemplate = {
   heading: string;
   description: string;
+  example: string;
   baseDeliverables: string[];
   optionKeys: OnboardingOptionKey[];
 };
@@ -133,6 +134,8 @@ export type CreatorOnboardingCreatorPayload = {
 };
 
 const manwon = 10_000;
+const minPlacementFeeKrw = 5_000;
+const maxOnboardingFeeKrw = 990_000;
 
 const onboardingTemplates: Record<
   `${OnboardingPlatform}:${OnboardingInventoryType}`,
@@ -142,8 +145,9 @@ const onboardingTemplates: Record<
     heading: "새 영상 안에서 직접 소개하기",
     description:
       "앞으로 만드는 YouTube 영상 안에서 광고주의 매장, 상품 또는 서비스를 직접 소개합니다.",
+    example: "제주 여행 영상 안에서 카페를 30초 소개",
     baseDeliverables: [
-      "영상 안에서 creator가 직접 소개",
+      "영상 안에서 크리에이터가 직접 소개",
       "매장명, 혜택 또는 링크를 화면에 표시",
     ],
     optionKeys: ["coupon_code", "dedicated_link", "brand_badge"],
@@ -152,12 +156,14 @@ const onboardingTemplates: Record<
     heading: "새 릴스로 방문이나 사용 경험 소개하기",
     description:
       "직접 방문하거나 사용한 모습을 Instagram 릴스 1편으로 소개합니다.",
+    example: "릴스 1편에서 매장 방문이나 제품 사용 소개",
     baseDeliverables: ["릴스 1편 제작", "방문 또는 사용 장면 포함"],
     optionKeys: ["story_3", "coupon_code", "dedicated_link"],
   },
   "YouTube:existing_traffic": {
     heading: "기존 영상에 광고 추가하기",
     description: "이미 올라가 있고 지금도 사람들이 보는 영상에 광고를 추가합니다.",
+    example: "기존 영상의 고정댓글이나 설명란 상단에 광고 추가",
     baseDeliverables: [],
     optionKeys: ["pinned_comment", "description_top"],
   },
@@ -165,8 +171,31 @@ const onboardingTemplates: Record<
     heading: "기존 Instagram 계정에 광고 노출하기",
     description:
       "새 릴스를 만들지 않고, 현재 계정을 방문하는 사람들이 광고를 볼 수 있게 합니다.",
+    example: "프로필 링크나 하이라이트에 광고 노출",
     baseDeliverables: [],
     optionKeys: ["profile_link", "highlight"],
+  },
+};
+
+export const onboardingRecommendedPrices: Record<
+  `${OnboardingPlatform}:${OnboardingInventoryType}`,
+  { placementFeeManwon: string; productionFeeManwon: string }
+> = {
+  "YouTube:new_content": {
+    placementFeeManwon: "10",
+    productionFeeManwon: "20",
+  },
+  "Instagram:new_content": {
+    placementFeeManwon: "5",
+    productionFeeManwon: "10",
+  },
+  "YouTube:existing_traffic": {
+    placementFeeManwon: "3",
+    productionFeeManwon: "0",
+  },
+  "Instagram:existing_traffic": {
+    placementFeeManwon: "1",
+    productionFeeManwon: "0",
   },
 };
 
@@ -195,15 +224,57 @@ export function getAllowedOnboardingOptions(input: {
   return getOnboardingTemplate(input.platform, input.inventoryType).optionKeys;
 }
 
+export function getRecommendedOnboardingPrice(input: {
+  platform: OnboardingPlatform;
+  inventoryType: OnboardingInventoryType;
+}) {
+  return onboardingRecommendedPrices[`${input.platform}:${input.inventoryType}`];
+}
+
+export function applyRecommendedOnboardingPriceValues(input: {
+  currentPlacementFeeManwon: string;
+  currentProductionFeeManwon: string;
+  placementFeeTouched: boolean;
+  productionFeeTouched: boolean;
+  platform: OnboardingPlatform;
+  inventoryType: OnboardingInventoryType;
+}) {
+  const recommended = getRecommendedOnboardingPrice(input);
+
+  return {
+    placementFeeManwon: input.placementFeeTouched
+      ? input.currentPlacementFeeManwon
+      : recommended.placementFeeManwon,
+    productionFeeManwon:
+      input.productionFeeTouched || input.inventoryType !== "new_content"
+        ? input.currentProductionFeeManwon
+        : recommended.productionFeeManwon,
+  };
+}
+
+export function inferOnboardingSelectedPlatform(input: {
+  current: OnboardingPlatform;
+  youtubeComplete: boolean;
+  instagramComplete: boolean;
+}): OnboardingPlatform {
+  if (input.instagramComplete && !input.youtubeComplete) {
+    return "Instagram";
+  }
+
+  if (input.youtubeComplete && !input.instagramComplete) {
+    return "YouTube";
+  }
+
+  return input.current;
+}
+
 export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
   const errors: CreatorOnboardingErrors = {};
   const displayName = stringValue(input.displayName).trim();
   const selectedPlatform = stringValue(input.selectedPlatform);
   const inventoryType = stringValue(input.inventoryType);
-  const placementFeeManwon = parseRequiredPositiveInteger(
-    input.placementFeeManwon,
-  );
-  const productionFeeManwon = parseRequiredNonNegativeInteger(
+  const placementFeeKrw = parsePlacementFeeKrw(input.placementFeeManwon);
+  const productionFeeKrwInput = parseProductionFeeKrw(
     input.productionFeeManwon,
   );
   const turnaroundDays = parseRequiredNonNegativeInteger(input.turnaroundDays);
@@ -237,16 +308,18 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
     errors.selectedPlatform = `${selectedPlatform} 채널 정보를 완성해주세요.`;
   }
 
-  if (placementFeeManwon === null) {
-    errors.placementFeeManwon = "광고 자리값은 1 이상의 만원 단위 정수여야 합니다.";
+  if (placementFeeKrw === null) {
+    errors.placementFeeManwon =
+      "광고 자리값은 0.5만원부터 99만원까지 0.5만원 단위로 입력해주세요.";
   }
 
   if (
     isOnboardingInventoryType(inventoryType) &&
     inventoryType === "new_content"
   ) {
-    if (productionFeeManwon === null) {
-      errors.productionFeeManwon = "제작비는 0 이상의 만원 단위 정수여야 합니다.";
+    if (productionFeeKrwInput === null) {
+      errors.productionFeeManwon =
+        "제작비는 0원부터 99만원까지 0.5만원 단위로 입력해주세요.";
     }
 
     if (!isOnboardingTurnaroundDays(turnaroundDays)) {
@@ -312,13 +385,13 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
     Object.keys(errors).length > 0 ||
     !isOnboardingPlatform(selectedPlatform) ||
     !isOnboardingInventoryType(inventoryType) ||
-    placementFeeManwon === null
+    placementFeeKrw === null
   ) {
     return { ok: false as const, errors };
   }
 
   const productionFeeKrw =
-    inventoryType === "new_content" ? (productionFeeManwon ?? 0) * manwon : 0;
+    inventoryType === "new_content" ? (productionFeeKrwInput ?? 0) : 0;
 
   return {
     ok: true as const,
@@ -329,7 +402,7 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
       channelProfiles,
       inventoryType,
       optionKeys: selectedOptionKeys,
-      placementFeeKrw: placementFeeManwon * manwon,
+      placementFeeKrw,
       productionFeeKrw,
       turnaroundDays:
         inventoryType === "new_content" &&
@@ -376,7 +449,6 @@ export function validateOnboardingOptions(input: {
 export function getOnboardingErrorStep(errors: CreatorOnboardingErrors) {
   const step1Fields: Array<keyof CreatorOnboardingErrors> = [
     "displayName",
-    "selectedPlatform",
     "youtubeName",
     "youtubeUrl",
     "youtubeAudienceSize",
@@ -385,6 +457,7 @@ export function getOnboardingErrorStep(errors: CreatorOnboardingErrors) {
     "instagramAudienceSize",
   ];
   const step2Fields: Array<keyof CreatorOnboardingErrors> = [
+    "selectedPlatform",
     "inventoryType",
     "optionKeys",
     "mentionSeconds",
@@ -487,6 +560,19 @@ export function calculateOnboardingTotalPrice(input: {
   productionFeeKrw: number;
 }) {
   return input.placementFeeKrw + input.productionFeeKrw;
+}
+
+export function parseOnboardingManwonToKrw(value: unknown) {
+  const string = stringValue(value).trim();
+
+  if (!/^(0|[1-9]\d*)(?:\.5)?$/.test(string)) {
+    return null;
+  }
+
+  const number = Number(string);
+  const krw = number * manwon;
+
+  return Number.isSafeInteger(krw) ? krw : null;
 }
 
 export function buildGeneratedCreatorSlug(randomId: string) {
@@ -753,6 +839,30 @@ function parseRequiredPositiveInteger(value: unknown) {
 
   const number = Number(string);
   return Number.isSafeInteger(number) ? number : null;
+}
+
+function parsePlacementFeeKrw(value: unknown) {
+  const krw = parseOnboardingManwonToKrw(value);
+
+  if (
+    krw === null ||
+    krw < minPlacementFeeKrw ||
+    krw > maxOnboardingFeeKrw
+  ) {
+    return null;
+  }
+
+  return krw;
+}
+
+function parseProductionFeeKrw(value: unknown) {
+  const krw = parseOnboardingManwonToKrw(value);
+
+  if (krw === null || krw < 0 || krw > maxOnboardingFeeKrw) {
+    return null;
+  }
+
+  return krw;
 }
 
 function parseRequiredNonNegativeInteger(value: unknown) {
