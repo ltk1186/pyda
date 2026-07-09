@@ -149,6 +149,12 @@ describe("marketplace rendering", () => {
     const html = renderToStaticMarkup(element);
 
     expect(html).toContain("누가, 어디에, 무엇을, 얼마에 해주는가.");
+    expect(html).toContain(
+      "크리에이터의 광고 자리를 직접 보고 원하는 광고를 진행해보세요.",
+    );
+    expect(html).not.toContain(
+      "지금은 실제 거래 검증을 위한 예시 광고 상품을 먼저 보여드립니다.",
+    );
     expect(html).toContain("모두의 창업 1R 선정 · MVP 검증 중");
     expect(html).toContain("Pyda는 지금 막 시작했습니다.");
     expect(html).toContain("전체");
@@ -159,6 +165,9 @@ describe("marketplace rendering", () => {
     expect(html).toContain("음식·간편식 TikTok 20초 숏폼");
     expect(html).not.toContain("이런 식으로 광고할 수 있어요");
     expect(html).not.toContain("제주 카페");
+    expect(html).toContain(
+      "상품에 광고를 요청하거나, 원하는 광고 조건을 직접 알려주세요.",
+    );
     expect(html).toContain('href="/advertise"');
   });
 });

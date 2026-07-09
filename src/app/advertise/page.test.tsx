@@ -29,8 +29,11 @@ describe("AdvertisePage", () => {
     );
 
     expect(html).toContain("광고 요청을 받았습니다.");
-    expect(html).toContain("빠르게 이야기하고 싶다면 카카오톡으로 바로 문의해주세요.");
+    expect(html).not.toContain(
+      "빠르게 이야기하고 싶다면 카카오톡으로 바로 문의해주세요.",
+    );
     expect(html).not.toContain("카카오톡으로 바로 이야기하기");
+    expect(html).toContain("남겨주신 번호로 연락드릴게요.");
   });
 
   it("shows Kakao open chat CTA when configured", () => {

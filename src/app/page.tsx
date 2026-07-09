@@ -35,7 +35,6 @@ export default async function Home({ searchParams }: HomeProps) {
           </h1>
           <p className="mt-3 text-base leading-7 text-neutral-600">
             크리에이터의 광고 자리를 직접 보고 원하는 광고를 진행해보세요.
-            지금은 실제 거래 검증을 위한 예시 광고 상품을 먼저 보여드립니다.
           </p>
         </div>
 
@@ -112,7 +111,10 @@ export default async function Home({ searchParams }: HomeProps) {
             <ol className="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
               <li>1. 로그인 없이 광고 상품을 탐색합니다.</li>
               <li>2. 상세 페이지에서 크리에이터와 광고 형식을 확인합니다.</li>
-              <li>3. 다음 단계에서 광고 요청 기능이 연결됩니다.</li>
+              <li>
+                3. 상품에 광고를 요청하거나, 원하는 광고 조건을 직접
+                알려주세요.
+              </li>
             </ol>
           </div>
         </div>

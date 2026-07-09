@@ -139,22 +139,24 @@ export function AdvertiseSuccess({
         조건에 맞는 크리에이터를 직접 찾아보고 연락드리겠습니다.
       </p>
 
-      {success.contactMethod === "kakao" ? (
+      {success.contactMethod === "kakao" && success.openChatUrl ? (
         <div className="mt-5">
           <p className="text-sm leading-6 text-neutral-600">
             빠르게 이야기하고 싶다면 카카오톡으로 바로 문의해주세요.
           </p>
-          {success.openChatUrl ? (
-            <a
-              className="mt-4 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-              href={success.openChatUrl}
-              rel="noreferrer"
-              target="_blank"
-            >
-              카카오톡으로 바로 이야기하기
-            </a>
-          ) : null}
+          <a
+            className="mt-4 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+            href={success.openChatUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            카카오톡으로 바로 이야기하기
+          </a>
         </div>
+      ) : success.contactMethod === "kakao" ? (
+        <p className="mt-5 text-sm leading-6 text-neutral-600">
+          남겨주신 번호로 연락드릴게요.
+        </p>
       ) : (
         <p className="mt-5 text-sm leading-6 text-neutral-600">
           전화로 연락드릴게요.
