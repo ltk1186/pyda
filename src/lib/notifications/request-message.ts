@@ -1,4 +1,10 @@
 import type { RequestFormInput } from "@/lib/requests";
+import {
+  customAdBudgetLabels,
+  customAdContactMethodLabels,
+  customAdTimingLabels,
+  type CustomAdRequestInput,
+} from "@/lib/custom-ad-requests/core";
 
 export const telegramMessageMaxLength = 4096;
 const targetMessageLength = 3800;
@@ -72,4 +78,48 @@ export function shouldAttemptRequestNotification(input: {
   insertFailed: boolean;
 }) {
   return !input.insertFailed && Boolean(input.insertedRequestId);
+}
+
+export type CustomAdRequestMessageInput = {
+  requestId: string;
+  request: CustomAdRequestInput;
+};
+
+export function buildCustomAdRequestTelegramMessage(
+  input: CustomAdRequestMessageInput,
+) {
+  const build = (requestDetails: string) =>
+    [
+      "[Pyda 맞춤 광고 문의]",
+      "",
+      `문의 ID: ${input.requestId}`,
+      `광고 대상: ${input.request.advertisedItem}`,
+      `원하는 광고: ${requestDetails}`,
+      `크리에이터 조건: ${input.request.creatorPreferences ?? "없음"}`,
+      `예산: ${customAdBudgetLabels[input.request.budgetRange]}`,
+      `희망 시기: ${customAdTimingLabels[input.request.desiredTiming]}`,
+      `연락: ${customAdContactMethodLabels[input.request.contactMethod]}`,
+      `전화번호: ${input.request.phone}`,
+    ].join("\n");
+
+  const fullMessage = build(input.request.requestDetails);
+
+  if (fullMessage.length <= targetMessageLength) {
+    return fullMessage;
+  }
+
+  const emptyDetailsMessage = build("");
+  const allowedDetailsLength = Math.max(
+    0,
+    targetMessageLength - emptyDetailsMessage.length - omittedLabel.length,
+  );
+  const truncatedDetails = `${input.request.requestDetails.slice(
+    0,
+    allowedDetailsLength,
+  )}${omittedLabel}`;
+  const truncatedMessage = build(truncatedDetails);
+
+  return truncatedMessage.length <= telegramMessageMaxLength
+    ? truncatedMessage
+    : truncatedMessage.slice(0, telegramMessageMaxLength - omittedLabel.length) + omittedLabel;
 }

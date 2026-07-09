@@ -1,12 +1,16 @@
 import "server-only";
 
+import type { CustomAdRequestInput } from "@/lib/custom-ad-requests/core";
 import type { PublicListing } from "@/lib/marketplace/types";
 import type { RequestFormInput } from "@/lib/requests";
 import {
   readTelegramNotificationConfig,
   type TelegramNotificationConfig,
 } from "./config";
-import { buildNewRequestTelegramMessage } from "./request-message";
+import {
+  buildCustomAdRequestTelegramMessage,
+  buildNewRequestTelegramMessage,
+} from "./request-message";
 
 export type TelegramSendResult =
   | {
@@ -113,6 +117,29 @@ export async function notifyNewAdvertisementRequest(input: {
         },
       },
       appBaseUrl: config.appBaseUrl,
+    });
+
+    return await sendTelegramMessage({
+      text,
+      config,
+    });
+  } catch {
+    return {
+      status: "failed",
+      reason: "network",
+    } satisfies TelegramSendResult;
+  }
+}
+
+export async function notifyNewCustomAdRequest(input: {
+  requestId: string;
+  request: CustomAdRequestInput;
+}) {
+  try {
+    const config = readTelegramNotificationConfig();
+    const text = buildCustomAdRequestTelegramMessage({
+      requestId: input.requestId,
+      request: input.request,
     });
 
     return await sendTelegramMessage({

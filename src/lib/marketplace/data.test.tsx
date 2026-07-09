@@ -159,35 +159,6 @@ describe("marketplace rendering", () => {
     expect(html).toContain("음식·간편식 TikTok 20초 숏폼");
     expect(html).not.toContain("이런 식으로 광고할 수 있어요");
     expect(html).not.toContain("제주 카페");
-  });
-
-  it("falls back to the advertiser guide when open chat env is missing", async () => {
-    const previous = process.env.KAKAO_OPEN_CHAT_URL;
-    delete process.env.KAKAO_OPEN_CHAT_URL;
-
-    const element = await Home({
-      searchParams: Promise.resolve({}),
-    });
-    const html = renderToStaticMarkup(element);
-
-    restoreEnv("KAKAO_OPEN_CHAT_URL", previous);
-
-    expect(html).toContain('href="/how-it-works#advertisers"');
-    expect(html).toContain("원하는 광고 문의하기");
-  });
-
-  it("links the inquiry CTA to Kakao open chat when configured", async () => {
-    const previous = process.env.KAKAO_OPEN_CHAT_URL;
-    process.env.KAKAO_OPEN_CHAT_URL = "https://open.kakao.com/o/example";
-
-    const element = await Home({
-      searchParams: Promise.resolve({}),
-    });
-    const html = renderToStaticMarkup(element);
-
-    restoreEnv("KAKAO_OPEN_CHAT_URL", previous);
-
-    expect(html).toContain('href="https://open.kakao.com/o/example"');
-    expect(html).toContain('target="_blank"');
+    expect(html).toContain('href="/advertise"');
   });
 });

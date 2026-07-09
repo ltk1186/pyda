@@ -7,7 +7,6 @@ import {
 } from "@/components/navigation/public-header";
 import { getPublicListings } from "@/lib/marketplace/data";
 import { normalizePlatformFilter } from "@/lib/marketplace/format";
-import { readKakaoOpenChatUrl } from "@/lib/requests/open-chat";
 
 type HomeProps = {
   searchParams: Promise<{
@@ -20,8 +19,6 @@ export default async function Home({ searchParams }: HomeProps) {
   const activePlatform = normalizePlatformFilter(params.platform);
   const listings = await getPublicListings(activePlatform);
   const headerProfile = await getPublicHeaderViewer();
-  const openChatUrl = readKakaoOpenChatUrl();
-  const inquiryHref = openChatUrl ?? "/how-it-works#advertisers";
   const currentPath =
     activePlatform === "전체"
       ? "/"
@@ -59,9 +56,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
                 className="inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-                href={inquiryHref}
-                rel={openChatUrl ? "noreferrer" : undefined}
-                target={openChatUrl ? "_blank" : undefined}
+                href="/advertise"
               >
                 원하는 광고 문의하기
               </Link>

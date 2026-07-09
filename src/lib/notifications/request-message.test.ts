@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCustomAdRequestTelegramMessage,
   buildNewRequestTelegramMessage,
   shouldAttemptRequestNotification,
   telegramMessageMaxLength,
@@ -90,5 +91,35 @@ describe("new request telegram message", () => {
         insertFailed: false,
       }),
     ).toBe(true);
+  });
+});
+
+describe("custom ad request telegram message", () => {
+  it("includes concierge demand information as plain text", () => {
+    const message = buildCustomAdRequestTelegramMessage({
+      requestId: "custom-request-id",
+      request: {
+        advertisedItem: "제주 애월의 작은 카페",
+        requestDetails: "제주 여행 유튜버의 영상 안에서 30초 소개",
+        creatorPreferences: "제주 여행 / YouTube",
+        budgetRange: "100k_300k",
+        desiredTiming: "within_1_month",
+        contactMethod: "kakao",
+        phone: "01012345678",
+        privacyConsent: true,
+      },
+    });
+
+    expect(message).toContain("[Pyda 맞춤 광고 문의]");
+    expect(message).toContain("문의 ID: custom-request-id");
+    expect(message).toContain("광고 대상: 제주 애월의 작은 카페");
+    expect(message).toContain(
+      "원하는 광고: 제주 여행 유튜버의 영상 안에서 30초 소개",
+    );
+    expect(message).toContain("크리에이터 조건: 제주 여행 / YouTube");
+    expect(message).toContain("예산: 10만~30만원");
+    expect(message).toContain("희망 시기: 1개월 안");
+    expect(message).toContain("연락: 카카오톡");
+    expect(message).toContain("전화번호: 01012345678");
   });
 });

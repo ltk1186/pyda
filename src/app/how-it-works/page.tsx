@@ -58,12 +58,20 @@ export default async function HowItWorksPage() {
               원하는 상품이 아직 없다면, Pyda가 조건에 맞는 크리에이터를
               직접 찾아 연결해드립니다.
             </p>
-            <Link
-              className="mt-6 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
-              href="/#marketplace"
-            >
-              광고 상품 보기
-            </Link>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                className="inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+                href="/#marketplace"
+              >
+                광고 상품 보기
+              </Link>
+              <Link
+                className="inline-flex rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+                href="/advertise"
+              >
+                원하는 광고 문의하기
+              </Link>
+            </div>
           </section>
 
           <section
