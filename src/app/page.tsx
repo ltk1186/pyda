@@ -7,6 +7,7 @@ import {
 } from "@/components/navigation/public-header";
 import { getPublicListings } from "@/lib/marketplace/data";
 import { normalizePlatformFilter } from "@/lib/marketplace/format";
+import { readKakaoOpenChatUrl } from "@/lib/requests/open-chat";
 
 type HomeProps = {
   searchParams: Promise<{
@@ -19,6 +20,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const activePlatform = normalizePlatformFilter(params.platform);
   const listings = await getPublicListings(activePlatform);
   const headerProfile = await getPublicHeaderViewer();
+  const openChatUrl = readKakaoOpenChatUrl();
+  const inquiryHref = openChatUrl ?? "/how-it-works#advertisers";
   const currentPath =
     activePlatform === "전체"
       ? "/"
@@ -39,26 +42,40 @@ export default async function Home({ searchParams }: HomeProps) {
           </p>
         </div>
 
-        <section className="mt-8 rounded-lg border border-neutral-200 p-5">
-          <h2 className="text-lg font-semibold tracking-tight">
-            이런 식으로 광고할 수 있어요
-          </h2>
-          <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
-            {advertisingExamples.map((example) => (
-              <div key={example.title}>
-                <p className="font-medium text-neutral-950">{example.title}</p>
-                <p className="mt-2 leading-6 text-neutral-600">
-                  {example.description}
-                </p>
-              </div>
-            ))}
+        <section className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-6 sm:px-6">
+          <div className="max-w-3xl">
+            <span className="inline-flex rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-semibold text-neutral-700">
+              모두의 창업 1R 선정 · MVP 검증 중
+            </span>
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight">
+              Pyda는 지금 막 시작했습니다.
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-neutral-600">
+              현재 공개된 상품은 광고 거래 방식을 보여드리기 위한
+              예시입니다. 실제 크리에이터 모집을 시작했고, 광고주 요청이
+              들어오면 원하는 조건에 맞는 크리에이터를 직접 찾아
+              연결해드립니다.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                className="inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+                href={inquiryHref}
+                rel={openChatUrl ? "noreferrer" : undefined}
+                target={openChatUrl ? "_blank" : undefined}
+              >
+                원하는 광고 문의하기
+              </Link>
+              <Link
+                className="inline-flex rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-white"
+                href="/creator/start"
+              >
+                크리에이터 등록하기
+              </Link>
+            </div>
           </div>
-          <p className="mt-5 text-sm leading-6 text-neutral-600">
-            광고 상품 선택 → 요청 보내기 → 카카오톡이나 전화로 바로 조율
-          </p>
         </section>
 
-        <div className="mt-7">
+        <div className="mt-7" id="marketplace">
           <PlatformFilter activePlatform={activePlatform} />
         </div>
 
@@ -110,21 +127,6 @@ export default async function Home({ searchParams }: HomeProps) {
     </main>
   );
 }
-
-const advertisingExamples = [
-  {
-    title: "제주 카페",
-    description: "여행 유튜버의 제주 영상 안에서 30초 소개",
-  },
-  {
-    title: "생활용품 브랜드",
-    description: "살림 Instagram 계정에서 사용 릴스 1편",
-  },
-  {
-    title: "앱 서비스",
-    description: "기존 YouTube 영상 설명란 상단에 링크 노출",
-  },
-];
 
 function Footer() {
   return (

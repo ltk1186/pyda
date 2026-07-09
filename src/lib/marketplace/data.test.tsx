@@ -120,7 +120,7 @@ describe("marketplace rendering", () => {
       <ListingCard listing={sampleListings[0]} />,
     );
 
-    expect(html).toContain("예시 광고 상품");
+    expect(html).toContain("예시 상품");
     expect(html).toContain("제주한바퀴");
     expect(html).toContain("Founding Creator");
     expect(html).toContain("YouTube");
@@ -139,7 +139,7 @@ describe("marketplace rendering", () => {
     };
     const html = renderToStaticMarkup(<ListingCard listing={realListing} />);
 
-    expect(html).not.toContain("예시 광고 상품");
+    expect(html).not.toContain("예시 상품");
   });
 
   it("renders the public home with platform filter and listing grid content", async () => {
@@ -149,11 +149,45 @@ describe("marketplace rendering", () => {
     const html = renderToStaticMarkup(element);
 
     expect(html).toContain("누가, 어디에, 무엇을, 얼마에 해주는가.");
+    expect(html).toContain("모두의 창업 1R 선정 · MVP 검증 중");
+    expect(html).toContain("Pyda는 지금 막 시작했습니다.");
     expect(html).toContain("전체");
     expect(html).toContain("YouTube");
     expect(html).toContain("Instagram");
     expect(html).toContain("네이버 블로그");
     expect(html).toContain("TikTok");
     expect(html).toContain("음식·간편식 TikTok 20초 숏폼");
+    expect(html).not.toContain("이런 식으로 광고할 수 있어요");
+    expect(html).not.toContain("제주 카페");
+  });
+
+  it("falls back to the advertiser guide when open chat env is missing", async () => {
+    const previous = process.env.KAKAO_OPEN_CHAT_URL;
+    delete process.env.KAKAO_OPEN_CHAT_URL;
+
+    const element = await Home({
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderToStaticMarkup(element);
+
+    restoreEnv("KAKAO_OPEN_CHAT_URL", previous);
+
+    expect(html).toContain('href="/how-it-works#advertisers"');
+    expect(html).toContain("원하는 광고 문의하기");
+  });
+
+  it("links the inquiry CTA to Kakao open chat when configured", async () => {
+    const previous = process.env.KAKAO_OPEN_CHAT_URL;
+    process.env.KAKAO_OPEN_CHAT_URL = "https://open.kakao.com/o/example";
+
+    const element = await Home({
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderToStaticMarkup(element);
+
+    restoreEnv("KAKAO_OPEN_CHAT_URL", previous);
+
+    expect(html).toContain('href="https://open.kakao.com/o/example"');
+    expect(html).toContain('target="_blank"');
   });
 });

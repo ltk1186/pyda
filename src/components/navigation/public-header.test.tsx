@@ -10,6 +10,8 @@ describe("PublicHeader", () => {
 
     expect(html).toContain('href="/"');
     expect(html).toContain(">Pyda<");
+    expect(html).toContain('href="/how-it-works"');
+    expect(html).toContain("이용 방법");
     expect(html).toContain('href="/creator/start"');
     expect(html).toContain("크리에이터 등록하기");
     expect(html).toContain("로그인");
@@ -31,6 +33,8 @@ describe("PublicHeader", () => {
     expect(html).not.toContain("마이페이지");
     expect(html).not.toContain("크리에이터 등록하기");
     expect(html).not.toContain("로그아웃");
+    expect(html).toContain('href="/how-it-works"');
+    expect(html).toContain('href="/account"');
     expect(html).toContain("오늘의제주");
     expect(html).toContain(">오<");
   });
@@ -48,5 +52,15 @@ describe("PublicHeader", () => {
 
     expect(html).toContain("https://example.com/avatar.png");
     expect(html).not.toContain(">로그인<");
+  });
+
+  it("renders an accessible mobile menu button", () => {
+    const html = renderToStaticMarkup(
+      <PublicHeader currentPath="/" profile={null} />,
+    );
+
+    expect(html).toContain('aria-label="메뉴 열기"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain(">메뉴<");
   });
 });
