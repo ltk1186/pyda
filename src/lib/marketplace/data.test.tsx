@@ -157,6 +157,13 @@ describe("marketplace rendering", () => {
     );
     expect(html).toContain("모두의 창업 1R 선정 · MVP 검증 중");
     expect(html).toContain("Pyda는 지금 막 시작했습니다.");
+    expect(html).toContain(
+      "원하는 광고 조건을 남겨주시면 조건에 맞는 크리에이터를 직접 찾아 섭외 가능 여부와 예상 견적을 확인해드립니다.",
+    );
+    expect(html).toContain("견적 확인까지 비용이 없습니다.");
+    expect(html).not.toContain(
+      "현재 공개된 상품은 광고 거래 방식을 보여드리기 위한 예시입니다.",
+    );
     expect(html).toContain("전체");
     expect(html).toContain("YouTube");
     expect(html).toContain("Instagram");
@@ -169,5 +176,7 @@ describe("marketplace rendering", () => {
       "상품에 광고를 요청하거나, 원하는 광고 조건을 직접 알려주세요.",
     );
     expect(html).toContain('href="/advertise"');
+    expect(html).toContain("제주에서 크리에이터 광고 연결을 검증하고 있습니다.");
+    expect(html).not.toContain("예시 상품으로 첫 거래 흐름을 검증합니다.");
   });
 });

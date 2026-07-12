@@ -53,6 +53,7 @@ export type CustomAdRequestInput = {
   contactMethod: CustomAdContactMethod;
   phone: string;
   privacyConsent: true;
+  source: string;
 };
 
 export type CustomAdRequestErrors = Partial<
@@ -68,13 +69,28 @@ export type CustomAdRequestInsertPayload = {
   desired_timing: CustomAdDesiredTiming;
   contact_method: CustomAdContactMethod;
   phone: string;
-  source: "homepage_concierge";
+  source: string;
   status: "submitted";
 };
 
 const advertisedItemMaxLength = 100;
 const requestDetailsMaxLength = 1500;
 const creatorPreferencesMaxLength = 500;
+export const defaultCustomAdSource = "homepage_concierge";
+
+// Source tags use lowercase numbers/letters, underscores, and hyphens.
+// Current campaign examples: talktalk_stay, talktalk_fnb, dm_insta_stay,
+// dm_insta_fnb, flyer_jeju_001, community_carrot, mentor_intro,
+// homepage_concierge. This is documentation, not an enum allow-list.
+export function sanitizeCustomAdSource(raw: unknown): string {
+  if (typeof raw !== "string") {
+    return defaultCustomAdSource;
+  }
+
+  const value = raw.trim().toLowerCase();
+
+  return /^[a-z0-9_-]{1,50}$/.test(value) ? value : defaultCustomAdSource;
+}
 
 export function parseCustomAdRequestFormData(formData: FormData) {
   return validateCustomAdRequestInput({
@@ -86,6 +102,7 @@ export function parseCustomAdRequestFormData(formData: FormData) {
     contactMethod: stringValue(formData.get("contactMethod")),
     phone: stringValue(formData.get("phone")),
     privacyConsent: formData.get("privacyConsent") === "on",
+    source: sanitizeCustomAdSource(formData.get("source")),
   });
 }
 
@@ -98,6 +115,7 @@ export function validateCustomAdRequestInput(input: Record<string, unknown>) {
   const desiredTiming = stringValue(input.desiredTiming);
   const contactMethod = stringValue(input.contactMethod);
   const normalizedPhone = normalizePhone(input.phone);
+  const source = sanitizeCustomAdSource(input.source);
 
   if (!advertisedItem) {
     errors.advertisedItem = "광고할 매장, 상품 또는 서비스 이름을 입력해주세요.";
@@ -161,6 +179,7 @@ export function validateCustomAdRequestInput(input: Record<string, unknown>) {
       contactMethod,
       phone: normalizedPhone,
       privacyConsent: true,
+      source,
     } satisfies CustomAdRequestInput,
   };
 }
@@ -178,7 +197,7 @@ export function buildCustomAdRequestInsertPayload(input: {
     desired_timing: input.request.desiredTiming,
     contact_method: input.request.contactMethod,
     phone: input.request.phone,
-    source: "homepage_concierge",
+    source: input.request.source,
     status: "submitted",
   };
 }

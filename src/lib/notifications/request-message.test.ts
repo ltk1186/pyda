@@ -107,6 +107,7 @@ describe("custom ad request telegram message", () => {
         contactMethod: "kakao",
         phone: "01012345678",
         privacyConsent: true,
+        source: "talktalk_stay",
       },
     });
 

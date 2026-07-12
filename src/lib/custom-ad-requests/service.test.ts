@@ -11,6 +11,7 @@ const request: CustomAdRequestInput = {
   contactMethod: "kakao",
   phone: "01012345678",
   privacyConsent: true,
+  source: "homepage_concierge",
 };
 
 describe("submitCustomAdRequestWithDependencies", () => {

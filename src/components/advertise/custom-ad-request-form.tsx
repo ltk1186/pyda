@@ -17,11 +17,12 @@ type CustomAdRequestFormProps = {
     state: AdvertiseFormState,
     formData: FormData,
   ) => Promise<AdvertiseFormState>;
+  source: string;
 };
 
 const initialState: AdvertiseFormState = {};
 
-export function CustomAdRequestForm({ action }: CustomAdRequestFormProps) {
+export function CustomAdRequestForm({ action, source }: CustomAdRequestFormProps) {
   const [state, formAction] = useActionState(action, initialState);
 
   if (state.success) {
@@ -30,6 +31,8 @@ export function CustomAdRequestForm({ action }: CustomAdRequestFormProps) {
 
   return (
     <form action={formAction} className="mt-8 space-y-6">
+      <input name="source" type="hidden" value={source} />
+
       <TextField
         error={state.errors?.advertisedItem}
         helper="매장, 상품 또는 서비스 이름을 적어주세요."
@@ -138,6 +141,11 @@ export function AdvertiseSuccess({
       <p className="mt-3 text-sm leading-6 text-neutral-600">
         조건에 맞는 크리에이터를 직접 찾아보고 연락드리겠습니다.
       </p>
+      <ol className="mt-5 space-y-2 text-sm leading-6 text-neutral-700">
+        <li>1. 남겨주신 조건을 확인하고 영업일 2일 안에 먼저 연락드립니다.</li>
+        <li>2. 조건에 맞는 크리에이터 후보를 찾고 가능 여부를 확인합니다.</li>
+        <li>3. 확인되는 대로 예상 견적을 남겨주신 연락처로 안내드립니다.</li>
+      </ol>
 
       {success.contactMethod === "kakao" && success.openChatUrl ? (
         <div className="mt-5">

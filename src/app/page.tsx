@@ -47,10 +47,9 @@ export default async function Home({ searchParams }: HomeProps) {
               Pyda는 지금 막 시작했습니다.
             </h2>
             <p className="mt-3 text-sm leading-7 text-neutral-600">
-              현재 공개된 상품은 광고 거래 방식을 보여드리기 위한
-              예시입니다. 실제 크리에이터 모집을 시작했고, 광고주 요청이
-              들어오면 원하는 조건에 맞는 크리에이터를 직접 찾아
-              연결해드립니다.
+              원하는 광고 조건을 남겨주시면 조건에 맞는 크리에이터를 직접
+              찾아 섭외 가능 여부와 예상 견적을 확인해드립니다. 견적
+              확인까지 비용이 없습니다.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
@@ -130,7 +129,7 @@ function Footer() {
     <footer className="border-t border-neutral-200">
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-neutral-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
         <p>Pyda MVP</p>
-        <p>예시 상품으로 첫 거래 흐름을 검증합니다.</p>
+        <p>제주에서 크리에이터 광고 연결을 검증하고 있습니다.</p>
       </div>
     </footer>
   );
