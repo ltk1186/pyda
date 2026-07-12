@@ -93,6 +93,7 @@ export function buildCustomAdRequestTelegramMessage(
       "[Pyda 맞춤 광고 문의]",
       "",
       `문의 ID: ${input.requestId}`,
+      `유입 경로: ${input.request.source}`,
       `광고 대상: ${input.request.advertisedItem}`,
       `원하는 광고: ${requestDetails}`,
       `크리에이터 조건: ${input.request.creatorPreferences ?? "없음"}`,

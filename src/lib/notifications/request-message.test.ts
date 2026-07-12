@@ -113,6 +113,7 @@ describe("custom ad request telegram message", () => {
 
     expect(message).toContain("[Pyda 맞춤 광고 문의]");
     expect(message).toContain("문의 ID: custom-request-id");
+    expect(message).toContain("유입 경로: talktalk_stay");
     expect(message).toContain("광고 대상: 제주 애월의 작은 카페");
     expect(message).toContain(
       "원하는 광고: 제주 여행 유튜버의 영상 안에서 30초 소개",

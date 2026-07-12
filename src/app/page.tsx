@@ -41,7 +41,7 @@ export default async function Home({ searchParams }: HomeProps) {
         <section className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-6 sm:px-6">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-semibold text-neutral-700">
-              모두의 창업 1R 선정 · MVP 검증 중
+              모두의 창업 1차 선정 · 제주 파일럿 진행 중
             </span>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight">
               Pyda는 지금 막 시작했습니다.

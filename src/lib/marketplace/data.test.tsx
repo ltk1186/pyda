@@ -155,7 +155,7 @@ describe("marketplace rendering", () => {
     expect(html).not.toContain(
       "지금은 실제 거래 검증을 위한 예시 광고 상품을 먼저 보여드립니다.",
     );
-    expect(html).toContain("모두의 창업 1R 선정 · MVP 검증 중");
+    expect(html).toContain("모두의 창업 1차 선정 · 제주 파일럿 진행 중");
     expect(html).toContain("Pyda는 지금 막 시작했습니다.");
     expect(html).toContain(
       "원하는 광고 조건을 남겨주시면 조건에 맞는 크리에이터를 직접 찾아 섭외 가능 여부와 예상 견적을 확인해드립니다.",
