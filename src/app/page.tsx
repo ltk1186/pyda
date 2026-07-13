@@ -25,7 +25,7 @@ export default async function Home({ searchParams }: HomeProps) {
       : `/?platform=${encodeURIComponent(activePlatform)}`;
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader currentPath={currentPath} profile={headerProfile} />
 
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6 lg:px-8">
@@ -38,9 +38,9 @@ export default async function Home({ searchParams }: HomeProps) {
           </p>
         </div>
 
-        <section className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-6 sm:px-6">
+        <section className="brand-soft-surface mt-8 rounded-2xl border border-[#d8eaee] px-5 py-6 sm:px-6">
           <div className="max-w-3xl">
-            <span className="inline-flex rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-semibold text-neutral-700">
+            <span className="brand-badge inline-flex rounded-full px-3 py-1 text-xs font-semibold">
               모두의 창업 1차 선정 · 제주 파일럿 진행 중
             </span>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight">
@@ -53,13 +53,13 @@ export default async function Home({ searchParams }: HomeProps) {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
-                className="inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+                className="brand-primary inline-flex rounded-full border px-4 py-2 text-sm font-semibold transition"
                 href="/advertise"
               >
                 원하는 광고 문의하기
               </Link>
               <Link
-                className="inline-flex rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-white"
+                className="brand-outline inline-flex rounded-full border px-4 py-2 text-sm font-semibold transition"
                 href="/creator/start"
               >
                 크리에이터 등록하기
@@ -85,7 +85,7 @@ export default async function Home({ searchParams }: HomeProps) {
         ) : null}
       </section>
 
-      <section className="border-t border-neutral-200 bg-neutral-50">
+      <section className="brand-soft-surface border-t border-[#d8eaee]">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 lg:px-8">
           <div>
             <p className="text-sm font-semibold text-neutral-950">
@@ -97,7 +97,7 @@ export default async function Home({ searchParams }: HomeProps) {
               정산에서 더 낮은 실질 수수료를 적용받습니다.
             </p>
             <Link
-              className="mt-5 inline-flex rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+              className="brand-primary mt-5 inline-flex rounded-md border px-4 py-2 text-sm font-semibold transition"
               href="/creator/start"
             >
               크리에이터로 시작하기

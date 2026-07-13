@@ -42,7 +42,7 @@ export default async function AccountRequestDetailPage({
   const kakaoOpenChatUrl = readKakaoOpenChatUrl();
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader
         currentPath={`/account/requests/${request.id}`}
         profile={headerProfile}
@@ -77,7 +77,7 @@ export default async function AccountRequestDetailPage({
               바로 Pyda와 카카오톡으로 이야기하면서 일정과 조건을 조율할 수 있습니다.
             </p>
             <Link
-              className="mt-5 inline-flex rounded-md bg-neutral-950 px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
+              className="brand-primary mt-5 inline-flex rounded-md border px-4 py-3 text-sm font-semibold transition"
               href={kakaoOpenChatUrl}
             >
               카카오톡으로 바로 이야기하기

@@ -31,7 +31,7 @@ export function ListingCard({ listing }: ListingCardProps) {
           unoptimized
         />
         {shouldShowSampleBadge(listing) ? (
-          <span className="absolute left-2 top-2 rounded-full bg-neutral-950/90 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/30">
+          <span className="brand-badge absolute left-2 top-2 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm">
             예시 상품
           </span>
         ) : null}

@@ -1,14 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
+  --background: 60 20% 99%;
+  --foreground: 195 31% 16%;
   --muted: 0 0% 96.1%;
   --muted-foreground: 0 0% 45.1%;
   --border: 0 0% 89.8%;
   --input: 0 0% 89.8%;
-  --ring: 0 0% 3.9%;
+  --ring: 191 44% 45%;
   --radius: 0.5rem;
+  --brand-canvas: #fcfcfa;
+  --brand-primary: #a8ddea;
+  --brand-primary-hover: #91cfdc;
+  --brand-ink: #173e49;
+  --brand-soft: #eef8fa;
+  --brand-border: #bcdfe7;
 }
 
 * {
@@ -16,7 +22,68 @@
 }
 
 body {
-  background: hsl(var(--background));
+  background: var(--brand-canvas);
   color: hsl(var(--foreground));
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.brand-page {
+  background: var(--brand-canvas);
+}
+
+.brand-soft-surface {
+  background: var(--brand-soft);
+}
+
+.brand-primary {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: var(--brand-ink);
+}
+
+.brand-primary:hover {
+  border-color: var(--brand-primary-hover);
+  background: var(--brand-primary-hover);
+}
+
+.brand-primary:focus-visible,
+.brand-outline:focus-visible,
+.brand-selected:focus-visible,
+.brand-focus:focus {
+  outline: 2px solid var(--brand-ink);
+  outline-offset: 2px;
+}
+
+.brand-primary:disabled {
+  border-color: #d9e3e5;
+  background: #d9e3e5;
+  color: #718085;
+}
+
+.brand-outline {
+  border-color: var(--brand-border);
+  background: #fff;
+  color: var(--brand-ink);
+}
+
+.brand-outline:hover {
+  border-color: var(--brand-primary-hover);
+  background: var(--brand-soft);
+}
+
+.brand-selected {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+  color: var(--brand-ink);
+}
+
+.brand-badge {
+  border: 1px solid var(--brand-border);
+  background: #dff3f7;
+  color: var(--brand-ink);
+}
+
+.brand-focus:focus {
+  border-color: #4fa6ba;
+  box-shadow: 0 0 0 3px rgb(168 221 234 / 40%);
 }

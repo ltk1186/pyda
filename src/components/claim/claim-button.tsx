@@ -45,7 +45,7 @@ function SubmitButton({
 
   return (
     <button
-      className="w-full rounded-md bg-neutral-950 px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+      className="brand-primary w-full rounded-md border px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed"
       disabled={pending}
       type="submit"
     >

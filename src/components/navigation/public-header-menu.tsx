@@ -50,7 +50,7 @@ export function PublicHeaderMenu({
       <button
         aria-expanded={open}
         aria-label="메뉴 열기"
-        className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+        className="brand-outline rounded-full border px-3 py-1.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-ink)]"
         onClick={() => setOpen((value) => !value)}
         type="button"
       >
@@ -107,7 +107,7 @@ function MenuContent({
               unoptimized
             />
           ) : (
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-soft)] text-xs font-semibold text-[var(--brand-ink)]">
               {profileInitial}
             </span>
           )}

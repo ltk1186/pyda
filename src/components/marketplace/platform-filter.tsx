@@ -22,8 +22,8 @@ export function PlatformFilter({ activePlatform }: PlatformFilterProps) {
             className={cn(
               "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition",
               isActive
-                ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400",
+                ? "brand-selected"
+                : "brand-outline",
             )}
             href={href}
             aria-current={isActive ? "page" : undefined}

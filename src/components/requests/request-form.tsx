@@ -53,7 +53,7 @@ export function RequestForm({ action }: RequestFormProps) {
             선호 연락 방식
           </label>
           <select
-            className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-3 text-sm outline-none focus:border-neutral-950"
+            className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-3 text-base outline-none"
             id="contactChannel"
             name="contactChannel"
             required
@@ -85,7 +85,7 @@ export function RequestForm({ action }: RequestFormProps) {
             어떤 광고를 진행하고 싶으신가요?
           </label>
           <textarea
-            className="mt-2 min-h-28 w-full resize-y rounded-md border border-neutral-300 px-3 py-3 text-sm outline-none focus:border-neutral-950"
+            className="brand-focus mt-2 min-h-28 w-full resize-y rounded-md border border-neutral-300 px-3 py-3 text-base outline-none"
             id="campaignBrief"
             name="campaignBrief"
             required
@@ -143,7 +143,7 @@ function TextField({
         {label}
       </label>
       <input
-        className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-3 text-sm outline-none focus:border-neutral-950"
+        className="brand-focus mt-2 w-full rounded-md border border-neutral-300 px-3 py-3 text-base outline-none"
         id={name}
         name={name}
         placeholder={placeholder}
@@ -168,7 +168,7 @@ function SubmitButton() {
 
   return (
     <button
-      className="mt-6 w-full rounded-md bg-neutral-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+      className="brand-primary mt-6 w-full rounded-md border px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed"
       disabled={pending}
       type="submit"
     >

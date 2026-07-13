@@ -33,7 +33,7 @@ export default async function CreatorListingsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">내 광고 상품</h1>
         {!isArchived ? (
           <Link
-            className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+            className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition"
             href="/creator/listings/new"
           >
             새 광고 상품 추가
@@ -86,7 +86,7 @@ export default async function CreatorListingsPage() {
                   </span>
                 ) : (
                   <Link
-                    className="self-center rounded-md border border-neutral-300 px-3 py-2 text-center text-sm font-medium hover:bg-neutral-50"
+                    className="brand-outline self-center rounded-md border px-3 py-2 text-center text-sm font-medium transition"
                     href={`/creator/listings/${listing.id}/edit`}
                   >
                     수정

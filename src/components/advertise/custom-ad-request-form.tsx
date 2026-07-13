@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useId, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { AdvertiseFormState } from "@/app/advertise/actions";
 import {
@@ -13,6 +13,7 @@ import {
   customAdTimingLabels,
   type CustomAdBudgetRange,
 } from "@/lib/custom-ad-requests/core";
+import styles from "./custom-ad-request-form.module.css";
 
 type CustomAdRequestFormProps = {
   action: (
@@ -69,12 +70,14 @@ export function CustomAdRequestForm({
   action,
   source,
 }: CustomAdRequestFormProps) {
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [state, formAction] = useActionState(
     async (currentState: AdvertiseFormState, formData: FormData) => {
       const nextState = await action(currentState, formData);
 
       if (nextState.errors) {
+        setStarted(true);
         setStep(getErrorStep(nextState.errors));
       }
 
@@ -120,7 +123,7 @@ export function CustomAdRequestForm({
   return (
     <form
       action={formAction}
-      className="mt-8"
+      className="w-full"
       onSubmit={(event) => {
         if (step < totalSteps - 1) {
           event.preventDefault();
@@ -143,21 +146,33 @@ export function CustomAdRequestForm({
         <input name="privacyConsent" type="hidden" value="on" />
       ) : null}
 
-      <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-7">
-        <div className="mb-7">
-          <div className="flex items-center justify-between text-xs font-semibold text-neutral-500">
-            <span>
-              {step + 1} / {totalSteps}
-            </span>
-            <span>견적 문의</span>
-          </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100">
+      {!started ? (
+        <AdvertiseIntro onStart={() => setStarted(true)} />
+      ) : (
+        <section className="mx-auto overflow-hidden rounded-[20px] border border-neutral-200 bg-white shadow-[0_18px_50px_rgba(24,24,20,0.07)]">
+          <div className="px-5 pt-5 sm:px-9 sm:pt-7">
+            <div className="flex items-baseline justify-between gap-4 text-sm">
+              <span className="font-medium text-neutral-600">견적 문의</span>
+              <span className="tabular-nums text-neutral-500">
+                {step + 1} / {totalSteps}
+              </span>
+            </div>
             <div
-              className="h-full rounded-full bg-neutral-950 transition-all"
-              style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
-            />
+              aria-label={`총 ${totalSteps}단계 중 ${step + 1}단계`}
+              aria-valuemax={totalSteps}
+              aria-valuemin={1}
+              aria-valuenow={step + 1}
+              className="mt-3 h-1 overflow-hidden rounded-full bg-neutral-100"
+              role="progressbar"
+            >
+              <div
+                className="h-full rounded-full bg-[var(--brand-primary)] transition-[width] duration-200 motion-reduce:transition-none"
+                style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
+              />
+            </div>
           </div>
-        </div>
+
+          <div className="px-5 pb-1 pt-8 sm:px-9 sm:pt-10">
 
         {step === 0 ? (
           <StepShell
@@ -210,6 +225,7 @@ export function CustomAdRequestForm({
                 <ChoiceButton
                   active={creatorPreferences.includes(option)}
                   key={option}
+                  multiple
                   onClick={() =>
                     setCreatorPreferences((current) =>
                       toggleCreatorPreference(current, option),
@@ -247,7 +263,7 @@ export function CustomAdRequestForm({
               ))}
             </ChoiceGrid>
             {budgetRange ? (
-              <p className="mt-5 rounded-2xl bg-neutral-50 p-4 text-sm leading-6 text-neutral-600">
+              <p className="mt-5 rounded-xl bg-[#f6f3ee] px-4 py-3.5 text-sm leading-6 text-neutral-600">
                 {budgetHints[budgetRange as CustomAdBudgetRange]}
               </p>
             ) : null}
@@ -300,10 +316,10 @@ export function CustomAdRequestForm({
               type="tel"
               value={phone}
             />
-            <label className="mt-5 flex items-start gap-3 text-sm leading-6 text-neutral-700">
+            <label className="mt-6 flex min-h-12 cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-sm leading-6 text-neutral-700 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--brand-ink)]">
               <input
                 checked={privacyConsent}
-                className="mt-1 h-4 w-4 rounded border-neutral-300"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--brand-ink)]"
                 onChange={(event) => setPrivacyConsent(event.target.checked)}
                 type="checkbox"
               />
@@ -315,41 +331,84 @@ export function CustomAdRequestForm({
           </StepShell>
         ) : null}
 
-        {state.message ? (
-          <p
-            className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
-            role="alert"
-          >
-            {state.message}
-          </p>
-        ) : null}
+            {state.message ? (
+              <p
+                className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm leading-6 text-red-700"
+                role="alert"
+              >
+                {state.message}
+              </p>
+            ) : null}
+          </div>
 
-        <div className="mt-8 flex items-center justify-between gap-3">
-          <button
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={step === 0}
-            onClick={() => setStep((current) => Math.max(0, current - 1))}
-            type="button"
-          >
-            이전
-          </button>
-          {step < totalSteps - 1 ? (
+          <div className="mt-8 flex items-center justify-between gap-3 border-t border-neutral-100 bg-neutral-50/70 px-5 py-4 sm:mt-10 sm:px-9 sm:py-5">
             <button
-              className="rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
-              disabled={nextDisabled}
-              onClick={() =>
-                setStep((current) => Math.min(totalSteps - 1, current + 1))
-              }
+              className="min-h-12 rounded-xl px-4 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-ink)] disabled:cursor-not-allowed disabled:opacity-0"
+              disabled={step === 0}
+              onClick={() => setStep((current) => Math.max(0, current - 1))}
               type="button"
             >
-              다음
+              이전
             </button>
-          ) : (
-            <SubmitButton disabled={nextDisabled} />
-          )}
-        </div>
-      </section>
+            {step < totalSteps - 1 ? (
+              <button
+                className="brand-primary min-h-12 min-w-28 rounded-xl border px-6 text-sm font-semibold transition disabled:cursor-not-allowed"
+                disabled={nextDisabled}
+                onClick={() =>
+                  setStep((current) => Math.min(totalSteps - 1, current + 1))
+                }
+                type="button"
+              >
+                다음
+              </button>
+            ) : (
+              <SubmitButton disabled={nextDisabled} />
+            )}
+          </div>
+        </section>
+      )}
     </form>
+  );
+}
+
+function AdvertiseIntro({ onStart }: { onStart: () => void }) {
+  return (
+    <section className={`${styles.intro} mx-auto max-w-2xl text-center`}>
+      <p className="text-xs font-semibold tracking-[0.08em] text-neutral-500">
+        모두의 창업 1차 선정 프로젝트 · 제주 파일럿
+      </p>
+      <h1 className="mx-auto mt-6 max-w-xl text-[2.35rem] font-semibold leading-[1.15] tracking-[-0.035em] text-balance sm:text-5xl">
+        광고를 잘 몰라도 괜찮아요.
+      </h1>
+      <p className="mx-auto mt-5 max-w-lg text-base leading-7 text-neutral-600 sm:text-lg sm:leading-8">
+        알고 있는 조건만 알려주세요. 어울리는 크리에이터를 직접 찾아
+        섭외 가능 여부와 예상 견적을 확인해드립니다.
+      </p>
+
+      <dl className="mx-auto mt-8 grid max-w-lg gap-4 border-y border-neutral-200 py-5 text-left text-sm leading-6 text-neutral-700 sm:grid-cols-3 sm:gap-6 sm:text-center">
+        <div>
+          <dt className="font-semibold text-neutral-950">견적 확인까지</dt>
+          <dd className="text-neutral-600">비용이 없습니다.</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-neutral-950">견적을 본 후</dt>
+          <dd className="text-neutral-600">진행을 결정합니다.</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-neutral-950">영업일 2일 안에</dt>
+          <dd className="text-neutral-600">먼저 연락드립니다.</dd>
+        </div>
+      </dl>
+
+      <button
+        className="brand-primary mt-8 min-h-14 w-full rounded-xl border px-6 text-base font-semibold transition sm:w-auto sm:min-w-56"
+        onClick={onStart}
+        type="button"
+      >
+        무료로 견적 알아보기
+      </button>
+      <p className="mt-3 text-xs text-neutral-500">약 2분 정도 걸려요</p>
+    </section>
   );
 }
 
@@ -363,40 +422,65 @@ function StepShell({
   title: string;
 }) {
   return (
-    <div>
-      <h2 className="text-2xl font-semibold tracking-tight text-balance">
+    <div className={styles.step}>
+      <h2 className="max-w-xl text-[1.75rem] font-semibold leading-[1.25] tracking-[-0.025em] text-balance sm:text-[2rem]">
         {title}
       </h2>
-      <p className="mt-3 text-sm leading-6 text-neutral-600">{description}</p>
-      <div className="mt-7 space-y-5">{children}</div>
+      <p className="mt-3 max-w-lg text-[15px] leading-6 text-neutral-600">
+        {description}
+      </p>
+      <div className="mt-7 space-y-5 sm:mt-8">{children}</div>
     </div>
   );
 }
 
 function ChoiceGrid({ children }: { children: ReactNode }) {
-  return <div className="grid gap-2 sm:grid-cols-2">{children}</div>;
+  return (
+    <div className="grid gap-2.5 sm:grid-cols-2" role="group">
+      {children}
+    </div>
+  );
 }
 
 function ChoiceButton({
   active,
   children,
+  multiple = false,
   onClick,
 }: {
   active: boolean;
   children: ReactNode;
+  multiple?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
-      className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+      aria-pressed={active}
+      className={`flex min-h-14 w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-[15px] font-medium leading-5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-ink)] ${
         active
-          ? "border-neutral-950 bg-neutral-950 text-white"
-          : "border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400"
+          ? "brand-selected shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+          : "border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50"
       }`}
       onClick={onClick}
       type="button"
     >
-      {children}
+      <span
+        aria-hidden="true"
+        className={`flex h-5 w-5 shrink-0 items-center justify-center border ${
+          multiple ? "rounded-sm" : "rounded-full"
+        } ${
+          active ? "border-[var(--brand-ink)]" : "border-neutral-400"
+        }`}
+      >
+        {active && multiple ? (
+          <span className="text-xs font-bold leading-none text-[var(--brand-ink)]">
+            ✓
+          </span>
+        ) : active ? (
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--brand-ink)]" />
+        ) : null}
+      </span>
+      <span>{children}</span>
     </button>
   );
 }
@@ -407,26 +491,33 @@ export function AdvertiseSuccess({
   success: NonNullable<AdvertiseFormState["success"]>;
 }) {
   return (
-    <section className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
-      <h2 className="text-2xl font-semibold tracking-tight">
+    <section className="mx-auto w-full max-w-2xl rounded-[20px] border border-neutral-200 bg-white px-5 py-8 shadow-[0_18px_50px_rgba(24,24,20,0.07)] sm:px-9 sm:py-10">
+      <p className="text-sm font-semibold text-neutral-500">접수되었습니다</p>
+      <h2 className="mt-2 text-[1.9rem] font-semibold leading-tight tracking-[-0.025em]">
         광고 요청을 받았습니다.
       </h2>
-      <p className="mt-3 text-sm leading-6 text-neutral-600">
+      <p className="mt-4 text-[15px] leading-6 text-neutral-600">
         조건에 맞는 크리에이터를 직접 찾아보고 연락드리겠습니다.
       </p>
-      <ol className="mt-5 space-y-2 text-sm leading-6 text-neutral-700">
-        <li>1. 남겨주신 조건을 확인하고 영업일 2일 안에 먼저 연락드립니다.</li>
-        <li>2. 조건에 맞는 크리에이터 후보를 찾고 가능 여부를 확인합니다.</li>
-        <li>3. 확인되는 대로 예상 견적을 남겨주신 연락처로 안내드립니다.</li>
+      <ol className="mt-7 space-y-5 border-t border-neutral-200 pt-6 text-sm leading-6 text-neutral-700">
+        <SuccessStep number="01">
+          남겨주신 조건을 확인하고 영업일 2일 안에 먼저 연락드립니다.
+        </SuccessStep>
+        <SuccessStep number="02">
+          조건에 맞는 크리에이터 후보를 찾고 가능 여부를 확인합니다.
+        </SuccessStep>
+        <SuccessStep number="03">
+          확인되는 대로 예상 견적을 남겨주신 연락처로 안내드립니다.
+        </SuccessStep>
       </ol>
 
       {success.contactMethod === "kakao" && success.openChatUrl ? (
-        <div className="mt-5">
+        <div className="mt-7 border-t border-neutral-200 pt-6">
           <p className="text-sm leading-6 text-neutral-600">
             빠르게 이야기하고 싶다면 카카오톡으로 바로 문의해주세요.
           </p>
           <a
-            className="mt-4 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+            className="brand-primary mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-5 text-sm font-semibold transition sm:w-auto"
             href={success.openChatUrl}
             rel="noreferrer"
             target="_blank"
@@ -435,15 +526,30 @@ export function AdvertiseSuccess({
           </a>
         </div>
       ) : success.contactMethod === "kakao" ? (
-        <p className="mt-5 text-sm leading-6 text-neutral-600">
+        <p className="mt-7 border-t border-neutral-200 pt-6 text-sm leading-6 text-neutral-600">
           남겨주신 번호로 연락드릴게요.
         </p>
       ) : (
-        <p className="mt-5 text-sm leading-6 text-neutral-600">
+        <p className="mt-7 border-t border-neutral-200 pt-6 text-sm leading-6 text-neutral-600">
           전화로 연락드릴게요.
         </p>
       )}
     </section>
+  );
+}
+
+function SuccessStep({
+  children,
+  number,
+}: {
+  children: ReactNode;
+  number: string;
+}) {
+  return (
+    <li className="grid grid-cols-[2rem_1fr] gap-3">
+      <span className="font-semibold tabular-nums text-neutral-400">{number}</span>
+      <span>{children}</span>
+    </li>
   );
 }
 
@@ -462,19 +568,29 @@ function TextField({
   type?: string;
   value: string;
 }) {
+  const id = useId();
+  const errorId = `${id}-error`;
+
   return (
     <div>
-      <label className="text-sm font-medium text-neutral-950">
+      <label className="text-sm font-semibold text-neutral-800" htmlFor={id}>
         {label}
         <input
-          className="mt-2 block w-full rounded-xl border border-neutral-300 px-3 py-3 text-sm outline-none focus:border-neutral-950"
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
+          className={`mt-2.5 block min-h-14 w-full rounded-xl border bg-white px-4 py-3 text-base text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:ring-2 ${
+            error
+              ? "border-red-500 focus:border-red-600 focus:ring-red-100"
+              : "brand-focus border-neutral-300"
+          }`}
+          id={id}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           type={type}
           value={value}
         />
       </label>
-      <FieldError message={error} />
+      <FieldError id={errorId} message={error} />
     </div>
   );
 }
@@ -492,29 +608,39 @@ function TextAreaField({
   placeholder?: string;
   value: string;
 }) {
+  const id = useId();
+  const errorId = `${id}-error`;
+
   return (
     <div>
-      <label className="text-sm font-medium text-neutral-950">
+      <label className="text-sm font-semibold text-neutral-800" htmlFor={id}>
         {label}
         <textarea
-          className="mt-2 block min-h-28 w-full resize-y rounded-xl border border-neutral-300 px-3 py-3 text-sm outline-none focus:border-neutral-950"
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
+          className={`mt-2.5 block min-h-32 w-full resize-y rounded-xl border bg-white px-4 py-3 text-base leading-6 text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:ring-2 ${
+            error
+              ? "border-red-500 focus:border-red-600 focus:ring-red-100"
+              : "brand-focus border-neutral-300"
+          }`}
+          id={id}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           value={value}
         />
       </label>
-      <FieldError message={error} />
+      <FieldError id={errorId} message={error} />
     </div>
   );
 }
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id?: string; message?: string }) {
   if (!message) {
     return null;
   }
 
   return (
-    <p className="mt-2 text-sm text-red-600" role="alert">
+    <p className="mt-2 text-sm leading-5 text-red-700" id={id} role="alert">
       {message}
     </p>
   );
@@ -525,7 +651,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button
-      className="rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+      className="brand-primary min-h-12 min-w-28 rounded-xl border px-6 text-sm font-semibold transition disabled:cursor-not-allowed"
       disabled={pending || disabled}
       type="submit"
     >

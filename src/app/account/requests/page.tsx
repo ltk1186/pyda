@@ -21,7 +21,7 @@ export default async function AccountRequestsPage() {
   const headerProfile = await getPublicHeaderProfileForUser(user.id);
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader currentPath="/account/requests" profile={headerProfile} />
 
       <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">

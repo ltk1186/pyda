@@ -67,7 +67,7 @@ export function CreatorListingForm({
               플랫폼
             </label>
             <select
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-950"
+              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
               defaultValue={listing?.platform ?? ""}
               id="platform"
               name="platform"
@@ -123,7 +123,7 @@ export function CreatorListingForm({
             상세 설명
           </label>
           <textarea
-            className="mt-2 min-h-28 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-950"
+            className="brand-focus mt-2 min-h-28 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
             defaultValue={listing?.description ?? ""}
             id="description"
             name="description"
@@ -135,7 +135,7 @@ export function CreatorListingForm({
             제공 내용
           </label>
           <textarea
-            className="mt-2 min-h-24 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-950"
+            className="brand-focus mt-2 min-h-24 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
             defaultValue={listing?.deliverables.join("\n") ?? ""}
             id="deliverables"
             name="deliverables"
@@ -158,7 +158,7 @@ export function CreatorListingForm({
             상태
           </label>
           <select
-            className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-950"
+            className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
             defaultValue={listing?.status ?? "draft"}
             id="status"
             name="status"
@@ -206,7 +206,7 @@ function TextField({
         {label}
       </label>
       <input
-        className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-950"
+        className="brand-focus mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
         defaultValue={defaultValue ?? ""}
         id={name}
         name={name}
@@ -231,7 +231,7 @@ function SubmitButton({ label }: { label: string }) {
 
   return (
     <button
-      className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+      className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed"
       disabled={pending}
       type="submit"
     >

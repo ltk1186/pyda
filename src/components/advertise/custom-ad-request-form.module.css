@@ -1,0 +1,23 @@
+.intro,
+.step {
+  animation: step-enter 160ms ease-out;
+}
+
+@keyframes step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro,
+  .step {
+    animation: none;
+  }
+}

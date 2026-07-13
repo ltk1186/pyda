@@ -26,7 +26,7 @@ export default async function CreatorOnboardingPage() {
   const headerProfile = await getPublicHeaderProfileForUser(user.id);
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader currentPath="/creator/onboarding" profile={headerProfile} />
 
       <section className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">

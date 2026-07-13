@@ -61,7 +61,7 @@ export function CreatorProfileForm({
             소개
           </label>
           <textarea
-            className="mt-2 min-h-28 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-950"
+            className="brand-focus mt-2 min-h-28 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
             defaultValue={creator.bio ?? ""}
             id="bio"
             name="bio"
@@ -132,7 +132,7 @@ function TextField({
         {label}
       </label>
       <input
-        className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-950"
+        className="brand-focus mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
         defaultValue={defaultValue ?? ""}
         id={name}
         name={name}
@@ -157,7 +157,7 @@ function SubmitButton() {
 
   return (
     <button
-      className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+      className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed"
       disabled={pending}
       type="submit"
     >

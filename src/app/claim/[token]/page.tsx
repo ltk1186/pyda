@@ -25,7 +25,7 @@ export default async function ClaimPage({ params }: ClaimPageProps) {
 
   if (!creator) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-white px-4 py-12 text-neutral-950">
+      <main className="brand-page flex min-h-screen items-center justify-center px-4 py-12 text-neutral-950">
         <section className="w-full max-w-md rounded-lg border border-neutral-200 p-6">
           <h1 className="text-xl font-semibold">온보딩 링크 오류</h1>
           <p className="mt-3 text-sm leading-6 text-neutral-600">
@@ -40,7 +40,7 @@ export default async function ClaimPage({ params }: ClaimPageProps) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-4 py-12 text-neutral-950">
+    <main className="brand-page flex min-h-screen items-center justify-center px-4 py-12 text-neutral-950">
       <section className="w-full max-w-md rounded-lg border border-neutral-200 p-6">
         <Link className="text-lg font-semibold" href="/">
           Pyda

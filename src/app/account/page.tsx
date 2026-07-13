@@ -25,7 +25,7 @@ export default async function AccountPage() {
   const creatorSummary = buildCreatorActivitySummary(creator);
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader currentPath="/account" profile={profile} />
 
       <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -90,7 +90,7 @@ export default async function AccountPage() {
                   </div>
                 </dl>
                 <Link
-                  className="mt-5 inline-flex rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold hover:bg-neutral-50"
+                  className="brand-outline mt-5 inline-flex rounded-md border px-4 py-2 text-sm font-semibold transition"
                   href="/account/requests"
                 >
                   요청 내역 보기
@@ -103,7 +103,7 @@ export default async function AccountPage() {
                   광고 상품을 둘러보고 필요한 광고를 요청해보세요.
                 </p>
                 <Link
-                  className="mt-5 inline-flex rounded-md border border-neutral-300 px-4 py-2 font-semibold text-neutral-950 hover:bg-neutral-50"
+                  className="brand-outline mt-5 inline-flex rounded-md border px-4 py-2 font-semibold transition"
                   href="/"
                 >
                   광고 상품 보기
@@ -123,7 +123,7 @@ export default async function AccountPage() {
                 <div className="mt-5 flex flex-wrap gap-2">
                   {creatorSummary.actions.map((action) => (
                     <Link
-                      className="inline-flex rounded-md border border-neutral-300 px-4 py-2 font-semibold text-neutral-950 hover:bg-neutral-50"
+                      className="brand-outline inline-flex rounded-md border px-4 py-2 font-semibold transition"
                       href={action.href}
                       key={action.href}
                     >

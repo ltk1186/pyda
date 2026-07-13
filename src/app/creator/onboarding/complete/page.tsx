@@ -29,7 +29,7 @@ export default async function CreatorOnboardingCompletePage() {
   const headerProfile = await getPublicHeaderProfileForUser(user.id);
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader
         currentPath="/creator/onboarding/complete"
         profile={headerProfile}
@@ -43,7 +43,7 @@ export default async function CreatorOnboardingCompletePage() {
           채널과 광고 상품을 확인한 뒤 공개됩니다.
         </p>
         <Link
-          className="mt-8 inline-flex rounded-md bg-neutral-950 px-4 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
+          className="brand-primary mt-8 inline-flex rounded-md border px-4 py-3 text-sm font-semibold transition"
           href="/account"
         >
           마이페이지로 돌아가기

@@ -29,7 +29,7 @@ function RequestCtaContent({ href, requestIntent }: RequestCtaProps) {
         처음부터 끝까지 직접 진행을 도와드립니다.
       </p>
       <Link
-        className="mt-5 block w-full rounded-md bg-neutral-950 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-neutral-800"
+        className="brand-primary mt-5 block w-full rounded-md border px-4 py-3 text-center text-sm font-semibold transition"
         href={href}
       >
         광고 진행하기

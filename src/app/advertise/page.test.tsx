@@ -10,13 +10,15 @@ describe("AdvertisePage", () => {
     const element = await AdvertisePage();
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("모두의 창업 1차 선정 · 제주 파일럿 진행 중");
-    expect(html).toContain("어떤 광고를 원하시나요?");
-    expect(html).toContain("견적 확인까지 비용이 없습니다.");
-    expect(html).toContain("조건 확인 후 영업일 2일 안에 먼저 연락드립니다.");
-    expect(html).toContain("무엇을 광고하고 싶으신가요?");
-    expect(html).toContain("1 / 6");
-    expect(html).toContain("견적 문의");
+    expect(html).toContain("모두의 창업 1차 선정 프로젝트 · 제주 파일럿");
+    expect(html).toContain("광고를 잘 몰라도 괜찮아요.");
+    expect(html).toContain("견적 확인까지");
+    expect(html).toContain("비용이 없습니다.");
+    expect(html).toContain("영업일 2일 안에");
+    expect(html).toContain("무료로 견적 알아보기");
+    expect(html).not.toContain("무엇을 광고하고 싶으신가요?");
+    expect(html).not.toContain("1 / 6");
+    expect(html).not.toContain("견적 문의");
     expect(html).not.toContain("어느 정도 예산으로 먼저 알아볼까요?");
     expect(html).not.toContain(
       "문의 답변과 크리에이터 연결을 위한 연락처 수집",

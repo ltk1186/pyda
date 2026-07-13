@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const error = getSingleParam(params.error);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-4 py-12 text-neutral-950">
+    <main className="brand-page flex min-h-screen items-center justify-center px-4 py-12 text-neutral-950">
       <section className="w-full max-w-sm">
         <Link className="text-xl font-semibold tracking-tight" href="/">
           Pyda

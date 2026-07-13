@@ -8,7 +8,7 @@ export default async function HowItWorksPage() {
   const headerProfile = await getPublicHeaderViewer();
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader currentPath="/how-it-works" profile={headerProfile} />
 
       <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -27,13 +27,13 @@ export default async function HowItWorksPage() {
           aria-label="이용 방법 섹션"
         >
           <Link
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+            className="brand-outline rounded-full border px-4 py-2 text-sm font-semibold transition"
             href="#advertisers"
           >
             광고주
           </Link>
           <Link
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+            className="brand-outline rounded-full border px-4 py-2 text-sm font-semibold transition"
             href="#creators"
           >
             크리에이터
@@ -60,13 +60,13 @@ export default async function HowItWorksPage() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                className="inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+                className="brand-primary inline-flex rounded-full border px-4 py-2 text-sm font-semibold transition"
                 href="/#marketplace"
               >
                 광고 상품 보기
               </Link>
               <Link
-                className="inline-flex rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-50"
+                className="brand-outline inline-flex rounded-full border px-4 py-2 text-sm font-semibold transition"
                 href="/advertise"
               >
                 원하는 광고 문의하기
@@ -94,7 +94,7 @@ export default async function HowItWorksPage() {
               있습니다.
             </p>
             <Link
-              className="mt-6 inline-flex rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+              className="brand-primary mt-6 inline-flex rounded-full border px-4 py-2 text-sm font-semibold transition"
               href="/creator/start"
             >
               크리에이터 등록하기

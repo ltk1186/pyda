@@ -21,7 +21,7 @@ export default async function CreatorStartPage() {
   const headerProfile = user ? await getPublicHeaderProfileForUser(user.id) : null;
 
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <PublicHeader currentPath="/creator/start" profile={headerProfile} />
 
       <section className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
@@ -43,7 +43,7 @@ export default async function CreatorStartPage() {
             <KakaoLoginButton nextPath="/creator/onboarding" />
           ) : (
             <Link
-              className="block rounded-md bg-neutral-950 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-neutral-800"
+              className="brand-primary block rounded-md border px-4 py-3 text-center text-sm font-semibold transition"
               href="/creator/onboarding"
             >
               크리에이터 등록 시작하기

@@ -13,7 +13,7 @@ export default function CreatorLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-white text-neutral-950">
+    <main className="brand-page min-h-screen text-neutral-950">
       <header className="border-b border-neutral-200">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <Link className="text-lg font-semibold tracking-tight" href="/">

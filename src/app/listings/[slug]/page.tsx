@@ -55,7 +55,7 @@ export default async function ListingDetail({
 
   return (
     <main
-      className={`min-h-screen bg-white text-neutral-950 ${
+      className={`brand-page min-h-screen text-neutral-950 ${
         showRequestForm ? "pb-10" : "pb-36 lg:pb-0"
       }`}
     >

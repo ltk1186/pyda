@@ -382,7 +382,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
               직접 소개 시간
             </label>
             <select
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-950"
+              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
               id="mentionSeconds"
               name="mentionSeconds"
               onChange={(event) => setMentionSeconds(event.target.value)}
@@ -431,7 +431,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
               스토리 몇 건을 추가할까요?
             </label>
             <select
-              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-950"
+              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
               id="storyCount"
               name="storyCount"
               onChange={(event) => setStoryCount(event.target.value)}
@@ -482,7 +482,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
                 보통 언제까지 제작할 수 있나요?
               </label>
               <select
-                className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-950"
+                className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
                 id="turnaroundDays"
                 name="turnaroundDays"
                 onChange={(event) => setTurnaroundDays(event.target.value)}
@@ -594,7 +594,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
       <div className="flex flex-wrap gap-3">
         {step > 1 ? (
           <button
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-semibold hover:bg-neutral-50"
+            className="brand-outline rounded-md border px-4 py-2 text-sm font-semibold transition"
             onClick={() => setStep((current) => Math.max(1, current - 1))}
             type="button"
           >
@@ -603,7 +603,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
         ) : null}
         {step < 3 ? (
           <button
-            className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800"
+            className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition"
             onClick={goToNextStep}
             type="button"
           >
@@ -624,7 +624,7 @@ function StepNav({ step }: { step: number }) {
         <div
           className={`rounded-full px-3 py-2 text-center ${
             step === index + 1
-              ? "bg-neutral-950 text-white"
+              ? "brand-selected"
               : "bg-neutral-100 text-neutral-600"
           }`}
           key={label}
@@ -689,7 +689,7 @@ function ChoiceCards({
           <label
             className={`cursor-pointer rounded-lg border p-4 ${
               option.value === value
-                ? "border-neutral-950 bg-neutral-50"
+                ? "border-[var(--brand-primary-hover)] bg-[var(--brand-soft)]"
                 : "border-neutral-200"
             }`}
             key={option.value}
@@ -781,7 +781,7 @@ function TextField({
         {label}
       </label>
       <input
-        className="mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-950"
+        className="brand-focus mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
         id={name}
         inputMode={inputMode}
         name={name}
@@ -814,7 +814,7 @@ function TextArea({
         {label}
       </label>
       <textarea
-        className="mt-2 min-h-20 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-950"
+        className="brand-focus mt-2 min-h-20 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
         id={name}
         name={name}
         onChange={(event) => onChange(event.target.value)}
@@ -911,7 +911,7 @@ function SubmitButton() {
 
   return (
     <button
-      className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+      className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed"
       disabled={pending}
       type="submit"
     >
