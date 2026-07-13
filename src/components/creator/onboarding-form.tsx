@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { useActionState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   allowedImageMimeTypes,
   maxListingImageBytes,
 } from "@/lib/admin/listing-core";
 import type { CreatorOnboardingFormState } from "@/app/creator/onboarding/actions";
+import { buildKakaoStartPath } from "@/components/auth/kakao-login-button";
 import {
   applyRecommendedOnboardingPriceValues,
   calculateOnboardingTotalPrice,
@@ -23,21 +23,31 @@ import {
   type OnboardingOptionKey,
   type OnboardingPlatform,
 } from "@/lib/creator/onboarding-core";
+import {
+  readCreatorOnboardingDraft,
+  validateCreatorOnboardingDraft,
+  writeCreatorOnboardingDraft,
+  type CreatorOnboardingDraft,
+} from "@/lib/creator/onboarding-draft";
 
 type CreatorOnboardingFormProps = {
   action: (
     state: CreatorOnboardingFormState,
     formData: FormData,
   ) => Promise<CreatorOnboardingFormState>;
+  isAuthenticated: boolean;
 };
 
 const initialState: CreatorOnboardingFormState = {};
 const maxImageSide = 1600;
 
-export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
+export function CreatorOnboardingForm({
+  action,
+  isAuthenticated,
+}: CreatorOnboardingFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const firstErrorRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [displayName, setDisplayName] = useState("");
   const [youtubeName, setYoutubeName] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -61,26 +71,26 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
   const [storyCount, setStoryCount] = useState("1");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageMessage, setImageMessage] = useState<string | null>(null);
+  const [clientErrors, setClientErrors] =
+    useState<CreatorOnboardingFormState["errors"]>();
+  const [draftMessage, setDraftMessage] = useState<string | null>(null);
+  const [restoredDraft, setRestoredDraft] = useState(false);
 
   const formAction = async (
     previousState: CreatorOnboardingFormState,
     formData: FormData,
   ) => {
+    setClientErrors(undefined);
     const result = await action(previousState, formData);
 
     if (result.errors) {
-      setStep(getOnboardingErrorStep(result.errors));
-      requestAnimationFrame(() => {
-        firstErrorRef.current?.scrollIntoView({
-          block: "center",
-          behavior: "smooth",
-        });
-      });
+      showValidationErrors(result.errors);
     }
 
     return result;
   };
   const [state, submitAction] = useActionState(formAction, initialState);
+  const errors = clientErrors ?? state.errors;
   const template = useMemo(
     () => getOnboardingTemplate(selectedPlatform, inventoryType),
     [selectedPlatform, inventoryType],
@@ -94,6 +104,40 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
     productionFeeKrw:
       inventoryType === "new_content" ? manwonToKrw(productionFeeManwon) : 0,
   });
+
+  useEffect(() => {
+    const draft = readDraftFromSession();
+
+    if (!draft) {
+      return;
+    }
+
+    const restoreTimer = window.setTimeout(() => {
+      setDisplayName(draft.displayName);
+      setBio(draft.bio);
+      setYoutubeName(draft.youtubeName);
+      setYoutubeUrl(draft.youtubeUrl);
+      setYoutubeAudienceSize(draft.youtubeAudienceSize);
+      setInstagramName(draft.instagramName);
+      setInstagramUrl(draft.instagramUrl);
+      setInstagramAudienceSize(draft.instagramAudienceSize);
+      setSelectedPlatform(draft.selectedPlatform);
+      setInventoryType(draft.inventoryType);
+      setOptionKeys(draft.optionKeys);
+      setPlacementFeeManwon(draft.placementFeeManwon);
+      setProductionFeeManwon(draft.productionFeeManwon);
+      setPlacementFeeTouched(draft.placementFeeTouched);
+      setProductionFeeTouched(draft.productionFeeTouched);
+      setTurnaroundDays(draft.turnaroundDays);
+      setMaintenanceDays(draft.maintenanceDays);
+      setMentionSeconds(draft.mentionSeconds);
+      setStoryCount(draft.storyCount);
+      setStep(3);
+      setRestoredDraft(true);
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
+  }, []);
 
   async function handleImage(file: File | undefined) {
     if (!file) {
@@ -228,18 +272,122 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
     }
   }
 
+  function buildDraft(): CreatorOnboardingDraft {
+    return {
+      step,
+      displayName,
+      bio,
+      youtubeName,
+      youtubeUrl,
+      youtubeAudienceSize,
+      instagramName,
+      instagramUrl,
+      instagramAudienceSize,
+      selectedPlatform,
+      inventoryType,
+      optionKeys,
+      placementFeeManwon,
+      productionFeeManwon,
+      placementFeeTouched,
+      productionFeeTouched,
+      turnaroundDays,
+      maintenanceDays,
+      mentionSeconds,
+      storyCount,
+    };
+  }
+
+  function showValidationErrors(
+    nextErrors: NonNullable<CreatorOnboardingFormState["errors"]>,
+  ) {
+    setClientErrors(nextErrors);
+    setStep(getOnboardingErrorStep(nextErrors));
+    requestAnimationFrame(() => {
+      const firstErrorName = Object.keys(nextErrors).find(
+        (field) => nextErrors[field as keyof typeof nextErrors],
+      );
+      const firstErrorField = firstErrorName
+        ? document.querySelector<HTMLElement>(`[name="${firstErrorName}"]`)
+        : null;
+
+      firstErrorField?.focus({ preventScroll: true });
+      (firstErrorField ?? firstErrorRef.current)?.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+      });
+    });
+  }
+
+  function connectKakaoAndResume() {
+    const draft = { ...buildDraft(), step: 3 as const };
+    const validation = validateCreatorOnboardingDraft(draft);
+
+    if (!validation.ok) {
+      setDraftMessage(null);
+      showValidationErrors(validation.errors);
+      return;
+    }
+
+    if (!writeDraftToSession(draft)) {
+      setDraftMessage(
+        "작성 내용을 임시 저장하지 못했습니다. 브라우저 설정을 확인한 뒤 다시 시도해주세요.",
+      );
+      return;
+    }
+
+    setClientErrors(undefined);
+    setDraftMessage(null);
+    window.location.assign(
+      buildKakaoStartPath("/creator/onboarding?resume=1"),
+    );
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (step < 3) {
+      event.preventDefault();
+      goToNextStep();
+      return;
+    }
+
+    const draft = { ...buildDraft(), step: 3 as const };
+
+    if (!isAuthenticated) {
+      event.preventDefault();
+      connectKakaoAndResume();
+      return;
+    }
+
+    writeDraftToSession(draft);
+  }
+
   return (
-    <form action={submitAction} className="space-y-6">
+    <form
+      action={submitAction}
+      className="overflow-hidden rounded-[22px] border border-[var(--brand-border)] bg-white shadow-[0_18px_55px_rgba(23,62,73,0.08)]"
+      onSubmit={handleSubmit}
+    >
       <StepNav step={step} />
       <div ref={firstErrorRef} />
+      {restoredDraft ? (
+        <p
+          className="mx-5 mt-5 rounded-xl bg-[var(--brand-soft)] px-4 py-3 text-sm leading-6 text-[var(--brand-ink)] sm:mx-8"
+          role="status"
+        >
+          작성한 내용을 불러왔습니다. 마지막으로 확인하고 등록 신청해 주세요.
+        </p>
+      ) : null}
 
-      <section className={step === 1 ? "space-y-5" : "hidden"}>
+      <section
+        className={
+          step === 1 ? "space-y-5 px-5 py-7 sm:px-8 sm:py-9" : "hidden"
+        }
+      >
         <SectionTitle
           title="어디에서 콘텐츠를 만들고 있나요?"
           description="운영하는 채널만 입력하세요. 하나만 있어도 되고, 두 개 모두 등록해도 됩니다."
         />
         <TextField
-          error={state.errors?.displayName}
+          error={errors?.displayName}
           label="활동명"
           name="displayName"
           onChange={setDisplayName}
@@ -249,14 +397,14 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
 
         <ChannelCard title="YouTube">
           <TextField
-            error={state.errors?.youtubeName}
+            error={errors?.youtubeName}
             label="YouTube 채널명"
             name="youtubeName"
             onChange={setYoutubeName}
             value={youtubeName}
           />
           <TextField
-            error={state.errors?.youtubeUrl}
+            error={errors?.youtubeUrl}
             label="채널 주소"
             name="youtubeUrl"
             onChange={setYoutubeUrl}
@@ -264,7 +412,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
             value={youtubeUrl}
           />
           <TextField
-            error={state.errors?.youtubeAudienceSize}
+            error={errors?.youtubeAudienceSize}
             inputMode="numeric"
             label="구독자 수"
             name="youtubeAudienceSize"
@@ -275,14 +423,14 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
 
         <ChannelCard title="Instagram">
           <TextField
-            error={state.errors?.instagramName}
+            error={errors?.instagramName}
             label="Instagram 계정명"
             name="instagramName"
             onChange={setInstagramName}
             value={instagramName}
           />
           <TextField
-            error={state.errors?.instagramUrl}
+            error={errors?.instagramUrl}
             label="계정 주소"
             name="instagramUrl"
             onChange={setInstagramUrl}
@@ -290,7 +438,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
             value={instagramUrl}
           />
           <TextField
-            error={state.errors?.instagramAudienceSize}
+            error={errors?.instagramAudienceSize}
             inputMode="numeric"
             label="팔로워 수"
             name="instagramAudienceSize"
@@ -308,7 +456,11 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
         />
       </section>
 
-      <section className={step === 2 ? "space-y-5" : "hidden"}>
+      <section
+        className={
+          step === 2 ? "space-y-5 px-5 py-7 sm:px-8 sm:py-9" : "hidden"
+        }
+      >
         <SectionTitle
           title="어떤 방식으로 광고할 수 있나요?"
           description="영상 전체를 광고로 만들 필요는 없습니다. 지금 만드는 콘텐츠 안의 일부 자리나 이미 운영 중인 채널의 광고 자리도 팔 수 있습니다."
@@ -323,7 +475,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
           ]}
           value={selectedPlatform}
         />
-        <FieldError message={state.errors?.selectedPlatform} />
+        <FieldError message={errors?.selectedPlatform} />
 
         <ChoiceCards
           label="광고 방식"
@@ -382,7 +534,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
               직접 소개 시간
             </label>
             <select
-              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
+              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-base outline-none sm:text-sm"
               id="mentionSeconds"
               name="mentionSeconds"
               onChange={(event) => setMentionSeconds(event.target.value)}
@@ -394,7 +546,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
                 </option>
               ))}
             </select>
-            <FieldError message={state.errors?.mentionSeconds} />
+            <FieldError message={errors?.mentionSeconds} />
           </div>
         ) : null}
 
@@ -417,7 +569,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
               </label>
             ))}
           </div>
-          <FieldError message={state.errors?.optionKeys} />
+          <FieldError message={errors?.optionKeys} />
         </div>
 
         {selectedPlatform === "Instagram" &&
@@ -431,7 +583,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
               스토리 몇 건을 추가할까요?
             </label>
             <select
-              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
+              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-base outline-none sm:text-sm"
               id="storyCount"
               name="storyCount"
               onChange={(event) => setStoryCount(event.target.value)}
@@ -443,16 +595,20 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
                 </option>
               ))}
             </select>
-            <FieldError message={state.errors?.storyCount} />
+            <FieldError message={errors?.storyCount} />
           </div>
         ) : null}
       </section>
 
-      <section className={step === 3 ? "space-y-5" : "hidden"}>
+      <section
+        className={
+          step === 3 ? "space-y-5 px-5 py-7 sm:px-8 sm:py-9" : "hidden"
+        }
+      >
         <SectionTitle title="가격과 조건을 정해주세요" />
         <ManwonField
           description="내 콘텐츠와 채널의 광고 가치를 정하는 금액입니다."
-          error={state.errors?.placementFeeManwon}
+          error={errors?.placementFeeManwon}
           label="광고 자리값"
           name="placementFeeManwon"
           onChange={(value) => {
@@ -465,7 +621,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
           <>
             <ManwonField
               description="방문, 촬영, 편집처럼 새 콘텐츠를 만드는 데 드는 비용입니다."
-              error={state.errors?.productionFeeManwon}
+              error={errors?.productionFeeManwon}
               label="제작비"
               name="productionFeeManwon"
               onChange={(value) => {
@@ -482,7 +638,7 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
                 보통 언제까지 제작할 수 있나요?
               </label>
               <select
-                className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
+                className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-base outline-none sm:text-sm"
                 id="turnaroundDays"
                 name="turnaroundDays"
                 onChange={(event) => setTurnaroundDays(event.target.value)}
@@ -494,14 +650,14 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
                   </option>
                 ))}
               </select>
-              <FieldError message={state.errors?.turnaroundDays} />
+              <FieldError message={errors?.turnaroundDays} />
             </div>
           </>
         ) : (
           <>
             <input name="productionFeeManwon" type="hidden" value="0" />
             <TextField
-              error={state.errors?.maintenanceDays}
+              error={errors?.maintenanceDays}
               inputMode="numeric"
               label="얼마 동안 광고를 유지할까요?"
               name="maintenanceDays"
@@ -527,43 +683,58 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
           처음 정하는 희망 가격입니다. 실제 광고 내용과 조건에 따라 광고주와 조율할 수 있습니다.
         </p>
 
-        <div>
-          <label className="text-sm font-medium text-neutral-950" htmlFor="coverImage">
-            대표 이미지
-          </label>
-          <p className="mt-1 text-xs text-neutral-500">
-            없어도 등록을 신청할 수 있습니다. 공개 전 확인 과정에서 추가할 수 있습니다.
-          </p>
-          <input
-            accept={allowedImageMimeTypes.join(",")}
-            className="mt-3 block w-full text-sm"
-            id="coverImage"
-            name="coverImage"
-            onChange={(event) => {
-              void handleImage(event.target.files?.[0]);
-            }}
-            ref={fileInputRef}
-            type="file"
-          />
-          {previewUrl ? (
-            <div className="mt-3 max-w-40 rounded-lg border border-neutral-200 p-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                alt="대표 이미지 미리보기"
-                className="aspect-[4/5] w-full rounded-md object-cover"
-                src={previewUrl}
-              />
-              <button
-                className="mt-2 text-xs text-red-700"
-                onClick={clearImage}
-                type="button"
-              >
-                이미지 삭제
-              </button>
-            </div>
-          ) : null}
-          <FieldError message={imageMessage ?? state.errors?.image} />
-        </div>
+        {isAuthenticated ? (
+          <div>
+            <label
+              className="text-sm font-medium text-neutral-950"
+              htmlFor="coverImage"
+            >
+              대표 이미지
+            </label>
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              없어도 등록을 신청할 수 있습니다. 공개 전 확인 과정에서 추가할 수
+              있습니다.
+            </p>
+            <input
+              accept={allowedImageMimeTypes.join(",")}
+              className="mt-3 block w-full text-sm"
+              id="coverImage"
+              name="coverImage"
+              onChange={(event) => {
+                void handleImage(event.target.files?.[0]);
+              }}
+              ref={fileInputRef}
+              type="file"
+            />
+            {previewUrl ? (
+              <div className="mt-3 max-w-40 rounded-lg border border-neutral-200 p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt="대표 이미지 미리보기"
+                  className="aspect-[4/5] w-full rounded-md object-cover"
+                  src={previewUrl}
+                />
+                <button
+                  className="mt-2 text-xs text-red-700"
+                  onClick={clearImage}
+                  type="button"
+                >
+                  이미지 삭제
+                </button>
+              </div>
+            ) : null}
+            <FieldError message={imageMessage ?? errors?.image} />
+          </div>
+        ) : (
+          <div className="brand-soft rounded-xl border border-[var(--brand-border)] px-4 py-3">
+            <p className="text-sm font-medium text-[var(--brand-ink)]">
+              대표 이미지는 계정 연결 후 선택할 수 있어요.
+            </p>
+            <p className="mt-1 text-xs leading-5 text-neutral-600">
+              선택 사항이며, 이미지 없이도 등록 신청을 완료할 수 있습니다.
+            </p>
+          </div>
+        )}
 
         <Preview
           displayName={displayName}
@@ -583,19 +754,24 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
         />
       </section>
 
-      <div>
-        {state.message ? (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="status">
-            {state.message}
+      <div className="px-5 sm:px-8">
+        {draftMessage || state.message ? (
+          <p
+            className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="status"
+          >
+            {draftMessage ?? state.message}
           </p>
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-neutral-200 bg-neutral-50/70 px-5 py-5 sm:px-8">
         {step > 1 ? (
           <button
             className="brand-outline rounded-md border px-4 py-2 text-sm font-semibold transition"
-            onClick={() => setStep((current) => Math.max(1, current - 1))}
+            onClick={() =>
+              setStep((current) => Math.max(1, current - 1) as 1 | 2 | 3)
+            }
             type="button"
           >
             이전
@@ -610,7 +786,25 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
             다음
           </button>
         ) : (
-          <SubmitButton />
+          <>
+            {isAuthenticated ? (
+              <SubmitButton />
+            ) : (
+              <button
+                className="brand-primary rounded-xl border px-5 py-3 text-sm font-semibold transition"
+                onClick={connectKakaoAndResume}
+                type="button"
+              >
+                카카오로 연결하고 마지막 확인하기
+              </button>
+            )}
+            {!isAuthenticated ? (
+              <p className="basis-full text-xs leading-5 text-neutral-500">
+                계정을 연결하면 작성한 내용을 불러와 마지막 확인 후 신청할 수
+                있습니다. 지금 단계에서는 아무 내용도 제출되지 않습니다.
+              </p>
+            ) : null}
+          </>
         )}
       </div>
     </form>
@@ -618,21 +812,42 @@ export function CreatorOnboardingForm({ action }: CreatorOnboardingFormProps) {
 }
 
 function StepNav({ step }: { step: number }) {
+  const labels = ["내 채널", "광고 상품", "가격과 확인"];
+
   return (
-    <div className="grid grid-cols-3 gap-2 text-xs font-medium text-neutral-600">
-      {["내 채널", "광고 상품", "가격과 확인"].map((label, index) => (
+    <header className="border-b border-neutral-200 px-5 pb-4 pt-5 sm:px-8 sm:pb-5 sm:pt-6">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm font-semibold text-neutral-900">
+          크리에이터 등록
+        </p>
+        <p className="text-xs font-medium text-neutral-500">
+          {step} / {labels.length}
+        </p>
+      </div>
+      <div
+        aria-label={`${labels.length}단계 중 ${step}단계: ${labels[step - 1]}`}
+        className="mt-4 h-1 overflow-hidden rounded-full bg-neutral-100"
+        role="progressbar"
+        aria-valuemax={labels.length}
+        aria-valuemin={1}
+        aria-valuenow={step}
+      >
         <div
-          className={`rounded-full px-3 py-2 text-center ${
-            step === index + 1
-              ? "brand-selected"
-              : "bg-neutral-100 text-neutral-600"
-          }`}
-          key={label}
-        >
-          {index + 1}. {label}
-        </div>
-      ))}
-    </div>
+          className="h-full rounded-full bg-[var(--brand-ink)] transition-[width] motion-reduce:transition-none"
+          style={{ width: `${(step / labels.length) * 100}%` }}
+        />
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] font-medium text-neutral-400 sm:text-xs">
+        {labels.map((label, index) => (
+          <span
+            className={step === index + 1 ? "text-[var(--brand-ink)]" : ""}
+            key={label}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    </header>
   );
 }
 
@@ -737,7 +952,7 @@ function ManwonField({
       </label>
       <div className="mt-2 flex rounded-md border border-neutral-300 focus-within:border-neutral-950">
         <input
-          className="min-w-0 flex-1 px-3 py-2 text-sm outline-none"
+          className="min-w-0 flex-1 px-3 py-2 text-base outline-none sm:text-sm"
           id={name}
           inputMode="decimal"
           name={name}
@@ -781,7 +996,7 @@ function TextField({
         {label}
       </label>
       <input
-        className="brand-focus mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
+        className="brand-focus mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-base outline-none sm:text-sm"
         id={name}
         inputMode={inputMode}
         name={name}
@@ -814,7 +1029,7 @@ function TextArea({
         {label}
       </label>
       <textarea
-        className="brand-focus mt-2 min-h-20 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
+        className="brand-focus mt-2 min-h-20 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-base outline-none sm:text-sm"
         id={name}
         name={name}
         onChange={(event) => onChange(event.target.value)}
@@ -911,7 +1126,7 @@ function SubmitButton() {
 
   return (
     <button
-      className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed"
+      className="brand-primary rounded-xl border px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed"
       disabled={pending}
       type="submit"
     >
@@ -958,6 +1173,21 @@ function isCompleteChannel(input: {
   );
 }
 
+function readDraftFromSession() {
+  try {
+    return readCreatorOnboardingDraft(window.sessionStorage);
+  } catch {
+    return null;
+  }
+}
+
+function writeDraftToSession(draft: CreatorOnboardingDraft) {
+  try {
+    return writeCreatorOnboardingDraft(window.sessionStorage, draft);
+  } catch {
+    return false;
+  }
+}
 
 async function resizeImage(file: File) {
   const image = await createImageBitmap(file);

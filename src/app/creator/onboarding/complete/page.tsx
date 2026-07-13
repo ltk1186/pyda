@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreatorOnboardingDraftCleanup } from "@/components/creator/onboarding-draft-cleanup";
 import {
   getPublicHeaderProfileForUser,
   PublicHeader,
@@ -30,6 +31,7 @@ export default async function CreatorOnboardingCompletePage() {
 
   return (
     <main className="brand-page min-h-screen text-neutral-950">
+      <CreatorOnboardingDraftCleanup />
       <PublicHeader
         currentPath="/creator/onboarding/complete"
         profile={headerProfile}

@@ -12,6 +12,12 @@ describe("KakaoLoginButton OAuth config", () => {
     );
   });
 
+  it("preserves the creator onboarding resume path", () => {
+    expect(buildKakaoStartPath("/creator/onboarding?resume=1")).toBe(
+      "/auth/kakao/start?next=%2Fcreator%2Fonboarding%3Fresume%3D1",
+    );
+  });
+
   it("does not keep the old multi-provider component", () => {
     expect(
       existsSync(join(root, "src/components/auth/oauth-buttons.tsx")),

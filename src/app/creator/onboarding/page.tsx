@@ -10,35 +10,39 @@ import { submitCreatorOnboarding } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function CreatorOnboardingPage() {
+type CreatorOnboardingPageProps = {
+  searchParams?: Promise<{ resume?: string | string[] }>;
+};
+
+export default async function CreatorOnboardingPage({
+  searchParams = Promise.resolve({}),
+}: CreatorOnboardingPageProps = {}) {
   const user = await getCurrentUser();
-
-  if (!user) {
-    redirect(`/login?next=${encodeURIComponent("/creator/onboarding")}`);
-  }
-
-  const creator = await getOwnedCreatorForUser(user.id);
+  const creator = user ? await getOwnedCreatorForUser(user.id) : null;
 
   if (creator) {
     redirect("/creator");
   }
 
-  const headerProfile = await getPublicHeaderProfileForUser(user.id);
+  const headerProfile = user
+    ? await getPublicHeaderProfileForUser(user.id)
+    : null;
+  const params = await searchParams;
+  const resume = Array.isArray(params.resume) ? params.resume[0] : params.resume;
+  const resumeRequested = resume === "1";
+  const currentPath = resumeRequested
+    ? "/creator/onboarding?resume=1"
+    : "/creator/onboarding";
 
   return (
     <main className="brand-page min-h-screen text-neutral-950">
-      <PublicHeader currentPath="/creator/onboarding" profile={headerProfile} />
+      <PublicHeader currentPath={currentPath} profile={headerProfile} />
 
-      <section className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          크리에이터 등록
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-neutral-600">
-          운영하는 채널을 입력하고 첫 광고 상품 하나를 등록 신청합니다.
-        </p>
-        <div className="mt-8">
-          <CreatorOnboardingForm action={submitCreatorOnboarding} />
-        </div>
+      <section className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        <CreatorOnboardingForm
+          action={submitCreatorOnboarding}
+          isAuthenticated={Boolean(user)}
+        />
       </section>
     </main>
   );
