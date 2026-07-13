@@ -12,6 +12,10 @@ import {
 
 const validDraft: CreatorOnboardingDraft = {
   step: 3,
+  adSlot: "youtube_video_mention",
+  instagramExistingPlacement: "profile_link",
+  useDifferentDisplayName: false,
+  hasSeparateProductionFee: true,
   displayName: "제주한바퀴",
   bio: "제주의 작은 공간을 소개합니다.",
   youtubeName: "제주한바퀴 YouTube",
@@ -22,7 +26,7 @@ const validDraft: CreatorOnboardingDraft = {
   instagramAudienceSize: "",
   selectedPlatform: "YouTube",
   inventoryType: "new_content",
-  optionKeys: ["coupon_code", "dedicated_link"],
+  optionKeys: [],
   placementFeeManwon: "10",
   productionFeeManwon: "20",
   placementFeeTouched: true,
@@ -30,7 +34,6 @@ const validDraft: CreatorOnboardingDraft = {
   turnaroundDays: "14",
   maintenanceDays: "14",
   mentionSeconds: "30",
-  storyCount: "1",
 };
 
 describe("creator onboarding browser draft", () => {
@@ -42,15 +45,18 @@ describe("creator onboarding browser draft", () => {
     ).toEqual(validDraft);
   });
 
-  it("preserves platform, inventory, options, prices, and touched state", () => {
+  it("preserves the slot, detail choice, prices, and touched state", () => {
     const parsed = parseCreatorOnboardingDraft(
       serializeCreatorOnboardingDraft(validDraft),
     );
 
     expect(parsed).toMatchObject({
+      adSlot: "youtube_video_mention",
+      instagramExistingPlacement: "profile_link",
+      hasSeparateProductionFee: true,
       selectedPlatform: "YouTube",
       inventoryType: "new_content",
-      optionKeys: ["coupon_code", "dedicated_link"],
+      optionKeys: [],
       placementFeeManwon: "10",
       productionFeeManwon: "20",
       placementFeeTouched: true,
@@ -63,7 +69,7 @@ describe("creator onboarding browser draft", () => {
     expect(parseCreatorOnboardingDraft("not-json")).toBeNull();
     expect(
       parseCreatorOnboardingDraft(
-        JSON.stringify({ version: 2, draft: validDraft }),
+        JSON.stringify({ version: 1, draft: validDraft }),
       ),
     ).toBeNull();
   });
@@ -80,6 +86,23 @@ describe("creator onboarding browser draft", () => {
     if (!invalid.ok) {
       expect(invalid.errors.displayName).toBeTruthy();
     }
+  });
+
+  it("preserves a manual production fee while the separate-fee choice is off", () => {
+    const draft = {
+      ...validDraft,
+      hasSeparateProductionFee: false,
+      productionFeeManwon: "17",
+    };
+
+    expect(validateCreatorOnboardingDraft(draft).ok).toBe(true);
+    expect(
+      parseCreatorOnboardingDraft(serializeCreatorOnboardingDraft(draft)),
+    ).toMatchObject({
+      hasSeparateProductionFee: false,
+      productionFeeManwon: "17",
+      productionFeeTouched: true,
+    });
   });
 
   it("reads, writes, and clears only the versioned session key", () => {

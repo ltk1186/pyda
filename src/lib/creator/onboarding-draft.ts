@@ -1,20 +1,27 @@
 import {
+  isOnboardingAdSlot,
   isOnboardingInventoryType,
   isOnboardingOptionKey,
   isOnboardingPlatform,
   validateCreatorOnboardingInput,
+  type InstagramExistingPlacement,
+  type OnboardingAdSlot,
   type OnboardingInventoryType,
   type OnboardingOptionKey,
   type OnboardingPlatform,
 } from "@/lib/creator/onboarding-core";
 
 export const creatorOnboardingDraftKey =
-  "pyda.creatorOnboardingDraft.v1";
+  "pyda.creatorOnboardingDraft.v2";
 
-const creatorOnboardingDraftVersion = 1;
+const creatorOnboardingDraftVersion = 2;
 
 export type CreatorOnboardingDraft = {
   step: 1 | 2 | 3;
+  adSlot: OnboardingAdSlot;
+  instagramExistingPlacement: InstagramExistingPlacement;
+  useDifferentDisplayName: boolean;
+  hasSeparateProductionFee: boolean;
   displayName: string;
   bio: string;
   youtubeName: string;
@@ -33,7 +40,6 @@ export type CreatorOnboardingDraft = {
   turnaroundDays: string;
   maintenanceDays: string;
   mentionSeconds: string;
-  storyCount: string;
 };
 
 type DraftStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -52,7 +58,6 @@ const stringFields = [
   "turnaroundDays",
   "maintenanceDays",
   "mentionSeconds",
-  "storyCount",
 ] as const;
 
 export function serializeCreatorOnboardingDraft(
@@ -77,7 +82,6 @@ export function parseCreatorOnboardingDraft(raw: string | null) {
     }
 
     const draft = envelope.draft;
-
     if (!isRecord(draft) || !isValidDraftShape(draft)) {
       return null;
     }
@@ -126,6 +130,7 @@ export function validateCreatorOnboardingDraft(
   draft: CreatorOnboardingDraft,
 ) {
   return validateCreatorOnboardingInput({
+    adSlot: draft.adSlot,
     displayName: draft.displayName,
     bio: draft.bio,
     youtubeName: draft.youtubeName,
@@ -138,11 +143,13 @@ export function validateCreatorOnboardingDraft(
     inventoryType: draft.inventoryType,
     optionKeys: draft.optionKeys,
     placementFeeManwon: draft.placementFeeManwon,
-    productionFeeManwon: draft.productionFeeManwon,
+    productionFeeManwon: draft.hasSeparateProductionFee
+      ? draft.productionFeeManwon
+      : "0",
     turnaroundDays: draft.turnaroundDays,
     maintenanceDays: draft.maintenanceDays,
     mentionSeconds: draft.mentionSeconds,
-    storyCount: draft.storyCount,
+    storyCount: "",
   });
 }
 
@@ -151,6 +158,12 @@ function isValidDraftShape(
 ): value is CreatorOnboardingDraft {
   if (
     (value.step !== 1 && value.step !== 2 && value.step !== 3) ||
+    typeof value.adSlot !== "string" ||
+    !isOnboardingAdSlot(value.adSlot) ||
+    (value.instagramExistingPlacement !== "profile_link" &&
+      value.instagramExistingPlacement !== "highlight") ||
+    typeof value.useDifferentDisplayName !== "boolean" ||
+    typeof value.hasSeparateProductionFee !== "boolean" ||
     typeof value.placementFeeTouched !== "boolean" ||
     typeof value.productionFeeTouched !== "boolean" ||
     typeof value.selectedPlatform !== "string" ||

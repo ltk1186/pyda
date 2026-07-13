@@ -39,10 +39,10 @@ export default async function CreatorOnboardingCompletePage() {
 
       <section className="mx-auto max-w-lg px-4 py-12 text-center sm:px-6 lg:px-8">
         <h1 className="text-2xl font-semibold tracking-tight">
-          등록 신청이 완료되었습니다.
+          첫 광고 자리 등록을 신청했습니다.
         </h1>
         <p className="mt-4 text-sm leading-6 text-neutral-600">
-          채널과 광고 상품을 확인한 뒤 공개됩니다.
+          등록 내용을 확인한 뒤 공개됩니다. 보통 1영업일 안에 확인합니다.
         </p>
         <Link
           className="brand-primary mt-8 inline-flex rounded-md border px-4 py-3 text-sm font-semibold transition"

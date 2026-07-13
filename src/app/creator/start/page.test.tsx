@@ -33,9 +33,13 @@ describe("CreatorStartPage", () => {
 
     const html = renderToStaticMarkup(await CreatorStartPage());
 
-    expect(html).toContain("내 콘텐츠의 광고 자리를 등록해보세요");
+    expect(html).toContain("내 콘텐츠 속 광고 자리를 판매합니다.");
     expect(html).toContain('href="/creator/onboarding"');
-    expect(html).toContain("3분 만에 광고 자리 등록하기");
+    expect(html).toContain("내가 팔 수 있는 자리 골라보기");
+    expect(html).toContain("영상 속 30초");
+    expect(html).toContain("고정댓글·설명란");
+    expect(html).toContain("프로필 링크·하이라이트");
+    expect(html).not.toContain("운영하는 채널을 알려주세요");
     expect(html).toContain("등록 신청을 완료할 때 카카오 계정 연결이 필요합니다");
     expect(html).not.toContain("카카오로 시작하기");
   });

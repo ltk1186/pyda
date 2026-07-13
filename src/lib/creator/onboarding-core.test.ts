@@ -6,16 +6,17 @@ import {
   buildGeneratedCreatorSlug,
   buildGeneratedListingSlug,
   calculateOnboardingTotalPrice,
+  getOnboardingAdSlotDefinition,
   getOnboardingErrorStep,
+  getOnboardingSlotSelection,
   getRecommendedOnboardingPrice,
-  getOnboardingTemplate,
-  inferOnboardingSelectedPlatform,
   parseOnboardingManwonToKrw,
   validateCreatorOnboardingInput,
-  validateOnboardingOptions,
+  type OnboardingAdSlot,
 } from "./onboarding-core";
 
 const baseInput = {
+  adSlot: "youtube_video_mention",
   displayName: "제주한바퀴",
   youtubeName: "제주한바퀴",
   youtubeUrl: "https://youtube.com/@jeju",
@@ -26,128 +27,113 @@ const baseInput = {
   selectedPlatform: "YouTube",
   bio: "제주 여행 콘텐츠",
   inventoryType: "new_content",
-  optionKeys: ["coupon_code"],
-  placementFeeManwon: "30",
-  productionFeeManwon: "10",
+  optionKeys: [],
+  placementFeeManwon: "10",
+  productionFeeManwon: "20",
   turnaroundDays: "14",
   maintenanceDays: "",
   mentionSeconds: "30",
   storyCount: "",
 };
 
-describe("creator onboarding templates", () => {
-  it("maps all four platform and inventory combinations with plain-language copy", () => {
-    expect(getOnboardingTemplate("YouTube", "new_content")).toMatchObject({
-      heading: "새 영상 안에서 직접 소개하기",
-      baseDeliverables: [
-        "영상 안에서 크리에이터가 직접 소개",
-        "매장명, 혜택 또는 링크를 화면에 표시",
-      ],
-      example: "제주 여행 영상 안에서 카페를 30초 소개",
-    });
-    expect(getOnboardingTemplate("Instagram", "new_content")).toMatchObject({
-      heading: "새 릴스로 방문이나 사용 경험 소개하기",
-    });
-    expect(getOnboardingTemplate("YouTube", "existing_traffic")).toMatchObject({
-      heading: "기존 영상에 광고 추가하기",
-    });
-    expect(getOnboardingTemplate("Instagram", "existing_traffic")).toMatchObject({
-      heading: "기존 Instagram 계정에 광고 노출하기",
-    });
+describe("creator onboarding ad slots", () => {
+  it("defines the five user-facing ad slots", () => {
+    const slots: OnboardingAdSlot[] = [
+      "youtube_video_mention",
+      "youtube_pinned_comment",
+      "youtube_description_top",
+      "instagram_reel_mention",
+      "instagram_profile_or_highlight",
+    ];
+
+    expect(slots.map((slot) => getOnboardingAdSlotDefinition(slot).title)).toEqual([
+      "YouTube 영상 속 짧은 소개",
+      "YouTube 기존 영상 고정댓글",
+      "YouTube 기존 영상 설명란 상단",
+      "Instagram 릴스 속 짧은 소개",
+      "Instagram 프로필 링크 또는 하이라이트",
+    ]);
   });
 
-  it("rejects options not allowed for the selected product", () => {
+  it("maps every slot to existing database fields", () => {
     expect(
-      validateOnboardingOptions({
-        platform: "YouTube",
-        inventoryType: "existing_traffic",
-        optionKeys: ["dedicated_link"],
+      getOnboardingSlotSelection({ adSlot: "youtube_video_mention" }),
+    ).toEqual({ platform: "YouTube", inventoryType: "new_content", optionKeys: [] });
+    expect(
+      getOnboardingSlotSelection({ adSlot: "youtube_pinned_comment" }),
+    ).toEqual({
+      platform: "YouTube",
+      inventoryType: "existing_traffic",
+      optionKeys: ["pinned_comment"],
+    });
+    expect(
+      getOnboardingSlotSelection({ adSlot: "youtube_description_top" }),
+    ).toEqual({
+      platform: "YouTube",
+      inventoryType: "existing_traffic",
+      optionKeys: ["description_top"],
+    });
+    expect(
+      getOnboardingSlotSelection({ adSlot: "instagram_reel_mention" }),
+    ).toEqual({ platform: "Instagram", inventoryType: "new_content", optionKeys: [] });
+    expect(
+      getOnboardingSlotSelection({
+        adSlot: "instagram_profile_or_highlight",
+        instagramPlacement: "highlight",
       }),
-    ).toBeTruthy();
+    ).toEqual({
+      platform: "Instagram",
+      inventoryType: "existing_traffic",
+      optionKeys: ["highlight"],
+    });
   });
 });
 
 describe("creator onboarding validation and payloads", () => {
-  it("accepts YouTube only and converts manwon prices to KRW", () => {
+  it("accepts a YouTube mention and converts manwon prices to KRW", () => {
     const result = validateCreatorOnboardingInput(baseInput);
-
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
+    if (!result.ok) return;
 
+    expect(result.data.adSlot).toBe("youtube_video_mention");
     expect(result.data.channelProfiles.youtube?.name).toBe("제주한바퀴");
-    expect(result.data.placementFeeKrw).toBe(300000);
-    expect(result.data.productionFeeKrw).toBe(100000);
-    expect(calculateOnboardingTotalPrice(result.data)).toBe(400000);
+    expect(result.data.mentionSeconds).toBe(30);
+    expect(result.data.placementFeeKrw).toBe(100000);
+    expect(result.data.productionFeeKrw).toBe(200000);
+    expect(calculateOnboardingTotalPrice(result.data)).toBe(300000);
   });
 
-  it("converts 0.5 manwon to 5,000 KRW and 99 manwon to 990,000 KRW", () => {
-    expect(parseOnboardingManwonToKrw("0.5")).toBe(5000);
-    expect(parseOnboardingManwonToKrw("99")).toBe(990000);
-  });
-
-  it("accepts Instagram only", () => {
+  it("accepts an Instagram reel and requires only Instagram channel fields", () => {
     const result = validateCreatorOnboardingInput({
       ...baseInput,
-      youtubeName: "",
-      youtubeUrl: "",
-      youtubeAudienceSize: "",
-      instagramName: "today.jeju",
-      instagramUrl: "https://instagram.com/today.jeju",
-      instagramAudienceSize: "2000",
+      adSlot: "instagram_reel_mention",
       selectedPlatform: "Instagram",
-      inventoryType: "new_content",
-      optionKeys: ["story_3"],
-      storyCount: "2",
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    expect(result.data.channelProfiles.instagram?.name).toBe("today.jeju");
-    expect(result.data.storyCount).toBe(2);
-  });
-
-  it("accepts both channels and preserves different channel names", () => {
-    const result = validateCreatorOnboardingInput({
-      ...baseInput,
       instagramName: "today.jeju",
       instagramUrl: "https://instagram.com/today.jeju",
       instagramAudienceSize: "2000",
+      inventoryType: "new_content",
+      youtubeName: "stale",
+      youtubeUrl: "not-a-url",
+      youtubeAudienceSize: "bad",
+      mentionSeconds: "",
     });
 
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    expect(result.data.channelProfiles.youtube?.name).toBe("제주한바퀴");
-    expect(result.data.channelProfiles.instagram?.name).toBe("today.jeju");
-  });
-
-  it("allows empty step data during UI navigation but rejects final blank channels", () => {
-    const result = validateCreatorOnboardingInput({
-      ...baseInput,
-      youtubeName: "",
-      youtubeUrl: "",
-      youtubeAudienceSize: "",
+    if (!result.ok) return;
+    expect(result.data.channelProfiles).toEqual({
+      instagram: {
+        name: "today.jeju",
+        url: "https://instagram.com/today.jeju",
+        audienceSize: 2000,
+      },
     });
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errors.selectedPlatform).toBeTruthy();
-    }
   });
 
-  it("returns partial channel errors clearly", () => {
+  it("rejects a partial selected channel with a clear field error", () => {
     const result = validateCreatorOnboardingInput({
       ...baseInput,
       youtubeAudienceSize: "",
     });
-
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors.youtubeAudienceSize).toBe(
@@ -156,88 +142,102 @@ describe("creator onboarding validation and payloads", () => {
     }
   });
 
-  it("does not require source URL or recent views for existing traffic", () => {
+  it("rejects client-tampered slot mappings", () => {
     const result = validateCreatorOnboardingInput({
       ...baseInput,
+      adSlot: "youtube_pinned_comment",
+      inventoryType: "new_content",
+      optionKeys: ["coupon_code"],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.optionKeys).toBeTruthy();
+      expect(result.errors.adSlot).toBeTruthy();
+    }
+  });
+
+  it("stores each existing-content position and forces production fee to zero", () => {
+    const cases = [
+      ["youtube_pinned_comment", "pinned_comment"],
+      ["youtube_description_top", "description_top"],
+    ] as const;
+
+    for (const [adSlot, optionKey] of cases) {
+      const result = validateCreatorOnboardingInput({
+        ...baseInput,
+        adSlot,
+        inventoryType: "existing_traffic",
+        optionKeys: [optionKey],
+        productionFeeManwon: "99",
+        turnaroundDays: "",
+        maintenanceDays: "10",
+        mentionSeconds: "",
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      expect(result.data.optionKeys).toEqual([optionKey]);
+      expect(result.data.productionFeeKrw).toBe(0);
+      expect(result.data.maintenanceDays).toBe(10);
+    }
+  });
+
+  it("stores exactly one Instagram profile placement", () => {
+    const result = validateCreatorOnboardingInput({
+      ...baseInput,
+      adSlot: "instagram_profile_or_highlight",
+      selectedPlatform: "Instagram",
       inventoryType: "existing_traffic",
-      optionKeys: ["pinned_comment"],
-      productionFeeManwon: "999",
+      optionKeys: ["highlight"],
+      youtubeName: "",
+      youtubeUrl: "",
+      youtubeAudienceSize: "",
+      instagramName: "today.jeju",
+      instagramUrl: "https://instagram.com/today.jeju",
+      instagramAudienceSize: "2000",
+      productionFeeManwon: "0",
       turnaroundDays: "",
-      maintenanceDays: "10",
+      maintenanceDays: "30",
       mentionSeconds: "",
     });
-
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    expect(result.data.productionFeeKrw).toBe(0);
-    expect(result.data.maintenanceDays).toBe(10);
+    if (!result.ok) return;
+    expect(result.data.optionKeys).toEqual(["highlight"]);
   });
 
   it("rejects invalid maintenance days", () => {
     const result = validateCreatorOnboardingInput({
       ...baseInput,
+      adSlot: "youtube_pinned_comment",
       inventoryType: "existing_traffic",
       optionKeys: ["pinned_comment"],
+      turnaroundDays: "",
       maintenanceDays: "0",
       mentionSeconds: "",
     });
-
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errors.maintenanceDays).toBeTruthy();
-    }
+    if (!result.ok) expect(result.errors.maintenanceDays).toBeTruthy();
   });
 
-  it("rejects out-of-range or invalid manwon price inputs", () => {
+  it("converts and bounds 0.5-manwon price input", () => {
+    expect(parseOnboardingManwonToKrw("0.5")).toBe(5000);
+    expect(parseOnboardingManwonToKrw("99")).toBe(990000);
     for (const value of ["0", "-1", "3.7", "99.5", "100"]) {
       const result = validateCreatorOnboardingInput({
         ...baseInput,
         placementFeeManwon: value,
       });
-
       expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.errors.placementFeeManwon).toBeTruthy();
-      }
+      if (!result.ok) expect(result.errors.placementFeeManwon).toBeTruthy();
     }
   });
 
-  it("allows 0.5 manwon increments and recomputes total price", () => {
-    const result = validateCreatorOnboardingInput({
-      ...baseInput,
-      placementFeeManwon: "0.5",
-      productionFeeManwon: "0.5",
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    expect(result.data.placementFeeKrw).toBe(5000);
-    expect(result.data.productionFeeKrw).toBe(5000);
-    expect(calculateOnboardingTotalPrice(result.data)).toBe(10000);
-  });
-
-  it("provides recommended prices by platform and product", () => {
+  it("keeps recommendations without overwriting manually edited prices", () => {
     expect(
       getRecommendedOnboardingPrice({
         platform: "YouTube",
         inventoryType: "new_content",
       }),
     ).toEqual({ placementFeeManwon: "10", productionFeeManwon: "20" });
-    expect(
-      getRecommendedOnboardingPrice({
-        platform: "Instagram",
-        inventoryType: "existing_traffic",
-      }),
-    ).toEqual({ placementFeeManwon: "1", productionFeeManwon: "0" });
-  });
-
-  it("does not overwrite manually edited recommended prices", () => {
     expect(
       applyRecommendedOnboardingPriceValues({
         currentPlacementFeeManwon: "77",
@@ -247,68 +247,26 @@ describe("creator onboarding validation and payloads", () => {
         platform: "Instagram",
         inventoryType: "new_content",
       }),
-    ).toEqual({
-      placementFeeManwon: "77",
-      productionFeeManwon: "11",
-    });
+    ).toEqual({ placementFeeManwon: "77", productionFeeManwon: "11" });
   });
 
-  it("builds direct onboarding creator payload with channel profiles", () => {
-    const result = validateCreatorOnboardingInput({
-      ...baseInput,
-      instagramName: "today.jeju",
-      instagramUrl: "https://instagram.com/today.jeju",
-      instagramAudienceSize: "2000",
-    });
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    const payload = buildCreatorOnboardingCreatorPayload({
-      input: result.data,
-      creatorId: "creator-id",
-      ownerUserId: "user-id",
-      creatorSlug: "creator-abc",
-      nowIso: "2026-07-07T00:00:00.000Z",
-    });
-
-    expect(payload).toMatchObject({
-      owner_user_id: "user-id",
-      status: "draft",
-      is_sample: false,
-      onboarded_at: "2026-07-07T00:00:00.000Z",
-      social_links: {
-        youtube: "https://youtube.com/@jeju",
-        instagram: "https://instagram.com/today.jeju",
-      },
-      channel_profiles: {
-        youtube: {
-          name: "제주한바퀴",
-          url: "https://youtube.com/@jeju",
-          audience_size: 1000,
-        },
-        instagram: {
-          name: "today.jeju",
-          url: "https://instagram.com/today.jeju",
-          audience_size: 2000,
-        },
-      },
-    });
-  });
-
-  it("builds first listing from the selected channel, not the creator display name", () => {
+  it("builds a one-channel creator and slot-specific listing payload", () => {
     const result = validateCreatorOnboardingInput({
       ...baseInput,
       displayName: "공통활동명",
       youtubeName: "유튜브채널명",
     });
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
+    if (!result.ok) return;
 
-    const payload = buildCreatorOnboardingListingPayload({
+    const creator = buildCreatorOnboardingCreatorPayload({
+      input: result.data,
+      creatorId: "creator-id",
+      ownerUserId: "user-id",
+      creatorSlug: "creator-abc",
+      nowIso: "2026-07-07T00:00:00.000Z",
+    });
+    const listing = buildCreatorOnboardingListingPayload({
       input: result.data,
       creatorId: "creator-id",
       listingId: "listing-id",
@@ -316,46 +274,31 @@ describe("creator onboarding validation and payloads", () => {
       imagePaths: [],
     });
 
-    expect(payload).toMatchObject({
+    expect(creator.social_links).toEqual({ youtube: "https://youtube.com/@jeju" });
+    expect(creator.channel_profiles).toEqual({
+      youtube: {
+        name: "유튜브채널명",
+        url: "https://youtube.com/@jeju",
+        audience_size: 1000,
+      },
+    });
+    expect(listing).toMatchObject({
+      title: "YouTube 영상 속 30초 소개",
       channel_name: "유튜브채널명",
-      price_krw: 400000,
+      option_keys: [],
       mention_seconds: 30,
       status: "draft",
       is_sample: false,
       published_at: null,
     });
-    expect(payload.deliverables).toContain("영상 안에서 약 30초 직접 소개");
   });
 
-  it("routes validation errors to the correct step", () => {
-    expect(getOnboardingErrorStep({ youtubeUrl: "missing" })).toBe(1);
+  it("routes slot, channel, and price errors to the new steps", () => {
+    expect(getOnboardingErrorStep({ adSlot: "missing" })).toBe(1);
+    expect(getOnboardingErrorStep({ optionKeys: "bad" })).toBe(1);
+    expect(getOnboardingErrorStep({ youtubeUrl: "missing" })).toBe(2);
     expect(getOnboardingErrorStep({ selectedPlatform: "missing" })).toBe(2);
-    expect(getOnboardingErrorStep({ optionKeys: "bad" })).toBe(2);
     expect(getOnboardingErrorStep({ placementFeeManwon: "bad" })).toBe(3);
-  });
-
-  it("infers the selected platform from completed channel data", () => {
-    expect(
-      inferOnboardingSelectedPlatform({
-        current: "YouTube",
-        youtubeComplete: false,
-        instagramComplete: true,
-      }),
-    ).toBe("Instagram");
-    expect(
-      inferOnboardingSelectedPlatform({
-        current: "Instagram",
-        youtubeComplete: true,
-        instagramComplete: false,
-      }),
-    ).toBe("YouTube");
-    expect(
-      inferOnboardingSelectedPlatform({
-        current: "Instagram",
-        youtubeComplete: true,
-        instagramComplete: true,
-      }),
-    ).toBe("Instagram");
   });
 
   it("generates safe slugs without user-provided slug input", () => {

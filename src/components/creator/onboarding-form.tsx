@@ -1,25 +1,34 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { useFormStatus } from "react-dom";
+import type { CreatorOnboardingFormState } from "@/app/creator/onboarding/actions";
+import { buildKakaoStartPath } from "@/components/auth/kakao-login-button";
 import {
   allowedImageMimeTypes,
   maxListingImageBytes,
 } from "@/lib/admin/listing-core";
-import type { CreatorOnboardingFormState } from "@/app/creator/onboarding/actions";
-import { buildKakaoStartPath } from "@/components/auth/kakao-login-button";
 import {
   applyRecommendedOnboardingPriceValues,
   calculateOnboardingTotalPrice,
-  getAllowedOnboardingOptions,
+  getOnboardingAdSlotDefinition,
   getOnboardingErrorStep,
-  getOnboardingTemplate,
-  inferOnboardingSelectedPlatform,
+  getOnboardingSlotPresentation,
+  getOnboardingSlotPriceChoices,
+  getOnboardingSlotSelection,
+  onboardingAdSlots,
   onboardingMentionSeconds,
-  onboardingOptionLabels,
-  onboardingStoryCounts,
   onboardingTurnaroundDays,
-  type OnboardingInventoryType,
+  validateCreatorOnboardingInput,
+  type InstagramExistingPlacement,
+  type OnboardingAdSlot,
   type OnboardingOptionKey,
   type OnboardingPlatform,
 } from "@/lib/creator/onboarding-core";
@@ -46,29 +55,28 @@ export function CreatorOnboardingForm({
   isAuthenticated,
 }: CreatorOnboardingFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const firstErrorRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [displayName, setDisplayName] = useState("");
+  const [adSlot, setAdSlot] = useState<OnboardingAdSlot | "">("");
+  const [instagramExistingPlacement, setInstagramExistingPlacement] =
+    useState<InstagramExistingPlacement>("profile_link");
+  const [mentionSeconds, setMentionSeconds] = useState("30");
   const [youtubeName, setYoutubeName] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [youtubeAudienceSize, setYoutubeAudienceSize] = useState("");
   const [instagramName, setInstagramName] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [instagramAudienceSize, setInstagramAudienceSize] = useState("");
-  const [selectedPlatform, setSelectedPlatform] =
-    useState<OnboardingPlatform>("YouTube");
+  const [useDifferentDisplayName, setUseDifferentDisplayName] = useState(false);
+  const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
-  const [inventoryType, setInventoryType] =
-    useState<OnboardingInventoryType>("new_content");
-  const [optionKeys, setOptionKeys] = useState<OnboardingOptionKey[]>([]);
   const [placementFeeManwon, setPlacementFeeManwon] = useState("");
-  const [productionFeeManwon, setProductionFeeManwon] = useState("");
+  const [productionFeeManwon, setProductionFeeManwon] = useState("0");
   const [placementFeeTouched, setPlacementFeeTouched] = useState(false);
   const [productionFeeTouched, setProductionFeeTouched] = useState(false);
+  const [hasSeparateProductionFee, setHasSeparateProductionFee] =
+    useState(false);
   const [turnaroundDays, setTurnaroundDays] = useState("14");
   const [maintenanceDays, setMaintenanceDays] = useState("14");
-  const [mentionSeconds, setMentionSeconds] = useState("15");
-  const [storyCount, setStoryCount] = useState("1");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageMessage, setImageMessage] = useState<string | null>(null);
   const [clientErrors, setClientErrors] =
@@ -76,62 +84,74 @@ export function CreatorOnboardingForm({
   const [draftMessage, setDraftMessage] = useState<string | null>(null);
   const [restoredDraft, setRestoredDraft] = useState(false);
 
+  const selection = useMemo(
+    () =>
+      adSlot
+        ? getOnboardingSlotSelection({
+            adSlot,
+            instagramPlacement: instagramExistingPlacement,
+          })
+        : null,
+    [adSlot, instagramExistingPlacement],
+  );
+  const selectedPlatform: OnboardingPlatform =
+    selection?.platform ?? "YouTube";
+  const inventoryType = selection?.inventoryType ?? "new_content";
+  const optionKeys = selection?.optionKeys ?? [];
+  const selectedChannelName =
+    selectedPlatform === "YouTube" ? youtubeName : instagramName;
+  const effectiveDisplayName = useDifferentDisplayName
+    ? displayName
+    : selectedChannelName;
+  const effectiveProductionFee =
+    inventoryType === "new_content" && hasSeparateProductionFee
+      ? productionFeeManwon
+      : "0";
+  const errors = clientErrors;
+  const totalPrice = calculateOnboardingTotalPrice({
+    placementFeeKrw: manwonToKrw(placementFeeManwon),
+    productionFeeKrw: manwonToKrw(effectiveProductionFee),
+  });
+
   const formAction = async (
     previousState: CreatorOnboardingFormState,
     formData: FormData,
   ) => {
     setClientErrors(undefined);
     const result = await action(previousState, formData);
-
     if (result.errors) {
       showValidationErrors(result.errors);
     }
-
     return result;
   };
   const [state, submitAction] = useActionState(formAction, initialState);
-  const errors = clientErrors ?? state.errors;
-  const template = useMemo(
-    () => getOnboardingTemplate(selectedPlatform, inventoryType),
-    [selectedPlatform, inventoryType],
-  );
-  const allowedOptions = useMemo(
-    () => getAllowedOnboardingOptions({ platform: selectedPlatform, inventoryType }),
-    [selectedPlatform, inventoryType],
-  );
-  const totalPrice = calculateOnboardingTotalPrice({
-    placementFeeKrw: manwonToKrw(placementFeeManwon),
-    productionFeeKrw:
-      inventoryType === "new_content" ? manwonToKrw(productionFeeManwon) : 0,
-  });
 
   useEffect(() => {
     const draft = readDraftFromSession();
-
     if (!draft) {
       return;
     }
 
     const restoreTimer = window.setTimeout(() => {
-      setDisplayName(draft.displayName);
-      setBio(draft.bio);
+      setAdSlot(draft.adSlot);
+      setInstagramExistingPlacement(draft.instagramExistingPlacement);
+      setMentionSeconds(draft.mentionSeconds);
       setYoutubeName(draft.youtubeName);
       setYoutubeUrl(draft.youtubeUrl);
       setYoutubeAudienceSize(draft.youtubeAudienceSize);
       setInstagramName(draft.instagramName);
       setInstagramUrl(draft.instagramUrl);
       setInstagramAudienceSize(draft.instagramAudienceSize);
-      setSelectedPlatform(draft.selectedPlatform);
-      setInventoryType(draft.inventoryType);
-      setOptionKeys(draft.optionKeys);
+      setUseDifferentDisplayName(draft.useDifferentDisplayName);
+      setDisplayName(draft.displayName);
+      setBio(draft.bio);
       setPlacementFeeManwon(draft.placementFeeManwon);
       setProductionFeeManwon(draft.productionFeeManwon);
       setPlacementFeeTouched(draft.placementFeeTouched);
       setProductionFeeTouched(draft.productionFeeTouched);
+      setHasSeparateProductionFee(draft.hasSeparateProductionFee);
       setTurnaroundDays(draft.turnaroundDays);
       setMaintenanceDays(draft.maintenanceDays);
-      setMentionSeconds(draft.mentionSeconds);
-      setStoryCount(draft.storyCount);
       setStep(3);
       setRestoredDraft(true);
     }, 0);
@@ -139,142 +159,106 @@ export function CreatorOnboardingForm({
     return () => window.clearTimeout(restoreTimer);
   }, []);
 
-  async function handleImage(file: File | undefined) {
-    if (!file) {
-      clearImage();
-      return;
-    }
-
-    if (!allowedImageMimeTypes.includes(file.type as never)) {
-      setImageMessage("JPEG, PNG, WebP 이미지만 선택할 수 있습니다.");
-      clearImage();
-      return;
-    }
-
-    if (file.size > maxListingImageBytes) {
-      setImageMessage("이미지는 1장당 최대 5MB까지 선택할 수 있습니다.");
-      clearImage();
-      return;
-    }
-
-    const resized = await resizeImage(file);
-    const transfer = new DataTransfer();
-    transfer.items.add(resized);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.files = transfer.files;
-    }
-
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    setPreviewUrl(URL.createObjectURL(resized));
-    setImageMessage(null);
-  }
-
-  function clearImage() {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    setPreviewUrl(null);
-  }
-
-  function toggleOption(optionKey: OnboardingOptionKey) {
-    setOptionKeys((current) =>
-      current.includes(optionKey)
-        ? current.filter((key) => key !== optionKey)
-        : [...current, optionKey],
-    );
-  }
-
-  function changePlatform(nextPlatform: OnboardingPlatform) {
-    setSelectedPlatform(nextPlatform);
-    setOptionKeys((current) =>
-      current.filter((optionKey) =>
-        getAllowedOnboardingOptions({
-          platform: nextPlatform,
-          inventoryType,
-        }).includes(optionKey),
-      ),
-    );
-
-    if (step === 3) {
-      applyRecommendedPrices(nextPlatform, inventoryType);
-    }
-  }
-
-  function changeInventoryType(nextInventoryType: OnboardingInventoryType) {
-    setInventoryType(nextInventoryType);
-    setOptionKeys((current) =>
-      current.filter((optionKey) =>
-        getAllowedOnboardingOptions({
-          platform: selectedPlatform,
-          inventoryType: nextInventoryType,
-        }).includes(optionKey),
-      ),
-    );
-
-    if (step === 3) {
-      applyRecommendedPrices(selectedPlatform, nextInventoryType);
-    }
-  }
-
-  function applyRecommendedPrices(
-    platform: OnboardingPlatform,
-    nextInventoryType: OnboardingInventoryType,
-  ) {
+  function chooseSlot(nextSlot: OnboardingAdSlot) {
+    setAdSlot(nextSlot);
+    setClientErrors(undefined);
+    const nextDefinition = getOnboardingAdSlotDefinition(nextSlot);
     const recommended = applyRecommendedOnboardingPriceValues({
       currentPlacementFeeManwon: placementFeeManwon,
       currentProductionFeeManwon: productionFeeManwon,
       placementFeeTouched,
       productionFeeTouched,
-      platform,
-      inventoryType: nextInventoryType,
+      platform: nextDefinition.platform,
+      inventoryType: nextDefinition.inventoryType,
     });
-
     setPlacementFeeManwon(recommended.placementFeeManwon);
-    setProductionFeeManwon(recommended.productionFeeManwon);
+    if (hasSeparateProductionFee) {
+      setProductionFeeManwon(recommended.productionFeeManwon);
+    }
   }
 
   function goToNextStep() {
-    if (step === 1) {
-      const inferredPlatform = inferOnboardingSelectedPlatform({
-        current: selectedPlatform,
-        youtubeComplete: isCompleteChannel({
-          name: youtubeName,
-          url: youtubeUrl,
-          audienceSize: youtubeAudienceSize,
-        }),
-        instagramComplete: isCompleteChannel({
-          name: instagramName,
-          url: instagramUrl,
-          audienceSize: instagramAudienceSize,
-        }),
-      });
-
-      if (inferredPlatform !== selectedPlatform) {
-        changePlatform(inferredPlatform);
-      }
-
-      setStep(2);
+    setDraftMessage(null);
+    if (step === 1 && !adSlot) {
+      setClientErrors({ adSlot: "열어둘 광고 자리를 선택해주세요." });
       return;
     }
-
     if (step === 2) {
-      applyRecommendedPrices(selectedPlatform, inventoryType);
-      setStep(3);
+      const stepErrors = validateChannelStep();
+      if (stepErrors) {
+        showValidationErrors(stepErrors);
+        return;
+      }
     }
+    setClientErrors(undefined);
+    setStep((current) => Math.min(3, current + 1) as 1 | 2 | 3);
   }
 
-  function buildDraft(): CreatorOnboardingDraft {
+  function validateChannelStep() {
+    if (!adSlot) {
+      return { adSlot: "열어둘 광고 자리를 선택해주세요." };
+    }
+    const parsed = validateCreatorOnboardingInput(
+      Object.assign({}, buildValidationInput(), {
+        placementFeeManwon: placementFeeManwon || "1",
+        productionFeeManwon: "0",
+        turnaroundDays: "14",
+        maintenanceDays: "14",
+      }),
+    );
+    if (parsed.ok) {
+      return null;
+    }
+    const channelErrors = Object.fromEntries(
+      Object.entries(parsed.errors).filter(([field]) =>
+        [
+          "displayName",
+          "selectedPlatform",
+          "youtubeName",
+          "youtubeUrl",
+          "youtubeAudienceSize",
+          "instagramName",
+          "instagramUrl",
+          "instagramAudienceSize",
+        ].includes(field),
+      ),
+    );
+    return Object.keys(channelErrors).length > 0 ? channelErrors : null;
+  }
+
+  function buildValidationInput() {
     return {
-      step,
+      adSlot,
+      displayName: effectiveDisplayName,
+      bio,
+      youtubeName,
+      youtubeUrl,
+      youtubeAudienceSize,
+      instagramName,
+      instagramUrl,
+      instagramAudienceSize,
+      selectedPlatform,
+      inventoryType,
+      optionKeys,
+      placementFeeManwon,
+      productionFeeManwon: effectiveProductionFee,
+      turnaroundDays,
+      maintenanceDays,
+      mentionSeconds,
+      storyCount: "",
+    };
+  }
+
+  function buildDraft(): CreatorOnboardingDraft | null {
+    if (!adSlot) {
+      return null;
+    }
+    return {
+      step: 3,
+      adSlot,
+      instagramExistingPlacement,
+      useDifferentDisplayName,
+      hasSeparateProductionFee,
       displayName,
       bio,
       youtubeName,
@@ -293,485 +277,446 @@ export function CreatorOnboardingForm({
       turnaroundDays,
       maintenanceDays,
       mentionSeconds,
-      storyCount,
     };
   }
 
-  function showValidationErrors(
-    nextErrors: NonNullable<CreatorOnboardingFormState["errors"]>,
-  ) {
-    setClientErrors(nextErrors);
-    setStep(getOnboardingErrorStep(nextErrors));
-    requestAnimationFrame(() => {
-      const firstErrorName = Object.keys(nextErrors).find(
-        (field) => nextErrors[field as keyof typeof nextErrors],
-      );
-      const firstErrorField = firstErrorName
-        ? document.querySelector<HTMLElement>(`[name="${firstErrorName}"]`)
-        : null;
-
-      firstErrorField?.focus({ preventScroll: true });
-      (firstErrorField ?? firstErrorRef.current)?.scrollIntoView({
-        block: "center",
-        behavior: "smooth",
-      });
+  function validateFinalDraft() {
+    const draft = buildDraft();
+    if (!draft) {
+      const nextErrors = { adSlot: "열어둘 광고 자리를 선택해주세요." };
+      showValidationErrors(nextErrors);
+      return null;
+    }
+    const parsed = validateCreatorOnboardingDraft({
+      ...draft,
+      displayName: effectiveDisplayName,
     });
+    if (!parsed.ok) {
+      showValidationErrors(parsed.errors);
+      return null;
+    }
+    return { ...draft, displayName: effectiveDisplayName };
   }
 
-  function connectKakaoAndResume() {
-    const draft = { ...buildDraft(), step: 3 as const };
-    const validation = validateCreatorOnboardingDraft(draft);
-
-    if (!validation.ok) {
-      setDraftMessage(null);
-      showValidationErrors(validation.errors);
+  function connectKakaoAndResume(event: FormEvent) {
+    event.preventDefault();
+    const draft = validateFinalDraft();
+    if (!draft) {
       return;
     }
-
     if (!writeDraftToSession(draft)) {
       setDraftMessage(
         "작성 내용을 임시 저장하지 못했습니다. 브라우저 설정을 확인한 뒤 다시 시도해주세요.",
       );
       return;
     }
-
-    setClientErrors(undefined);
-    setDraftMessage(null);
     window.location.assign(
       buildKakaoStartPath("/creator/onboarding?resume=1"),
     );
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    if (step < 3) {
-      event.preventDefault();
-      goToNextStep();
-      return;
-    }
-
-    const draft = { ...buildDraft(), step: 3 as const };
-
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (!isAuthenticated) {
       event.preventDefault();
-      connectKakaoAndResume();
+      connectKakaoAndResume(event);
+      return;
+    }
+    const draft = validateFinalDraft();
+    if (!draft) {
+      event.preventDefault();
+      return;
+    }
+    writeDraftToSession(draft);
+  }
+
+  function showValidationErrors(nextErrors: CreatorOnboardingFormState["errors"]) {
+    if (!nextErrors) {
+      return;
+    }
+    setClientErrors(nextErrors);
+    setStep(getOnboardingErrorStep(nextErrors));
+    window.setTimeout(() => {
+      const firstErrorField = Object.keys(nextErrors)[0];
+      const target = document.querySelector<HTMLElement>(
+        `[name="${firstErrorField}"]`,
+      );
+      target?.focus();
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+  }
+
+  async function handleImage(file: File | undefined) {
+    if (!file) {
+      clearImage();
+      return;
+    }
+    if (!allowedImageMimeTypes.includes(file.type as never)) {
+      setImageMessage("JPEG, PNG, WebP 이미지만 선택할 수 있습니다.");
+      clearImage();
+      return;
+    }
+    if (file.size > maxListingImageBytes) {
+      setImageMessage("이미지는 1장당 최대 5MB까지 선택할 수 있습니다.");
+      clearImage();
       return;
     }
 
-    writeDraftToSession(draft);
+    try {
+      const resized = await resizeImage(file);
+      const transfer = new DataTransfer();
+      transfer.items.add(resized);
+      if (fileInputRef.current) {
+        fileInputRef.current.files = transfer.files;
+      }
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(URL.createObjectURL(resized));
+      setImageMessage(null);
+    } catch {
+      setImageMessage("이미지를 준비하지 못했습니다. 다른 이미지를 선택해주세요.");
+      clearImage();
+    }
+  }
+
+  function clearImage() {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setPreviewUrl(null);
   }
 
   return (
     <form
       action={submitAction}
-      className="overflow-hidden rounded-[22px] border border-[var(--brand-border)] bg-white shadow-[0_18px_55px_rgba(23,62,73,0.08)]"
+      className="overflow-hidden rounded-3xl border border-[var(--brand-border)] bg-white shadow-[0_18px_50px_rgba(52,43,35,0.08)]"
       onSubmit={handleSubmit}
     >
+      <input name="displayName" type="hidden" value={effectiveDisplayName} />
+      <input name="bio" type="hidden" value={bio} />
+      <input name="selectedPlatform" type="hidden" value={selectedPlatform} />
+      <input name="inventoryType" type="hidden" value={inventoryType} />
+      {optionKeys.map((optionKey) => (
+        <input key={optionKey} name="optionKeys" type="hidden" value={optionKey} />
+      ))}
       <StepNav step={step} />
-      <div ref={firstErrorRef} />
-      {restoredDraft ? (
+
+      {restoredDraft && isAuthenticated ? (
         <p
-          className="mx-5 mt-5 rounded-xl bg-[var(--brand-soft)] px-4 py-3 text-sm leading-6 text-[var(--brand-ink)] sm:mx-8"
+          className="mx-5 mt-5 rounded-xl bg-[var(--brand-soft)] px-4 py-3 text-sm text-[var(--brand-ink)] sm:mx-8"
           role="status"
         >
           작성한 내용을 불러왔습니다. 마지막으로 확인하고 등록 신청해 주세요.
         </p>
       ) : null}
 
-      <section
-        className={
-          step === 1 ? "space-y-5 px-5 py-7 sm:px-8 sm:py-9" : "hidden"
-        }
-      >
+      <section className={step === 1 ? "px-5 py-7 sm:px-8 sm:py-9" : "hidden"}>
         <SectionTitle
-          title="어디에서 콘텐츠를 만들고 있나요?"
-          description="운영하는 채널만 입력하세요. 하나만 있어도 되고, 두 개 모두 등록해도 됩니다."
+          description="처음에는 하나만 골라도 됩니다. 나중에 다른 자리도 추가할 수 있어요."
+          title="어떤 광고 자리를 열 수 있나요?"
         />
-        <TextField
-          error={errors?.displayName}
-          label="활동명"
-          name="displayName"
-          onChange={setDisplayName}
-          placeholder="제주한바퀴"
-          value={displayName}
-        />
-
-        <ChannelCard title="YouTube">
-          <TextField
-            error={errors?.youtubeName}
-            label="YouTube 채널명"
-            name="youtubeName"
-            onChange={setYoutubeName}
-            value={youtubeName}
-          />
-          <TextField
-            error={errors?.youtubeUrl}
-            label="채널 주소"
-            name="youtubeUrl"
-            onChange={setYoutubeUrl}
-            placeholder="https://youtube.com/@channel"
-            value={youtubeUrl}
-          />
-          <TextField
-            error={errors?.youtubeAudienceSize}
-            inputMode="numeric"
-            label="구독자 수"
-            name="youtubeAudienceSize"
-            onChange={setYoutubeAudienceSize}
-            value={youtubeAudienceSize}
-          />
-        </ChannelCard>
-
-        <ChannelCard title="Instagram">
-          <TextField
-            error={errors?.instagramName}
-            label="Instagram 계정명"
-            name="instagramName"
-            onChange={setInstagramName}
-            value={instagramName}
-          />
-          <TextField
-            error={errors?.instagramUrl}
-            label="계정 주소"
-            name="instagramUrl"
-            onChange={setInstagramUrl}
-            placeholder="https://instagram.com/account"
-            value={instagramUrl}
-          />
-          <TextField
-            error={errors?.instagramAudienceSize}
-            inputMode="numeric"
-            label="팔로워 수"
-            name="instagramAudienceSize"
-            onChange={setInstagramAudienceSize}
-            value={instagramAudienceSize}
-          />
-        </ChannelCard>
-
-        <TextArea
-          label="한 줄 소개"
-          name="bio"
-          onChange={setBio}
-          placeholder="제주의 작은 가게와 여행지를 영상으로 소개합니다."
-          value={bio}
-        />
-      </section>
-
-      <section
-        className={
-          step === 2 ? "space-y-5 px-5 py-7 sm:px-8 sm:py-9" : "hidden"
-        }
-      >
-        <SectionTitle
-          title="어떤 방식으로 광고할 수 있나요?"
-          description="영상 전체를 광고로 만들 필요는 없습니다. 지금 만드는 콘텐츠 안의 일부 자리나 이미 운영 중인 채널의 광고 자리도 팔 수 있습니다."
-        />
-        <ChoiceCards
-          label="이번에 첫 광고 상품을 등록할 채널"
-          name="selectedPlatform"
-          onChange={(value) => changePlatform(value as OnboardingPlatform)}
-          options={[
-            { value: "YouTube", label: "YouTube" },
-            { value: "Instagram", label: "Instagram" },
-          ]}
-          value={selectedPlatform}
-        />
-        <FieldError message={errors?.selectedPlatform} />
-
-        <ChoiceCards
-          label="광고 방식"
-          name="inventoryType"
-          onChange={(value) =>
-            changeInventoryType(value as OnboardingInventoryType)
-          }
-          options={[
-            {
-              value: "new_content",
-              label: "새 콘텐츠로 소개하기",
-              description:
-                "새 영상이나 릴스를 만들면서 브랜드, 매장 또는 상품을 직접 소개합니다.",
-            },
-            {
-              value: "existing_traffic",
-              label: "기존 콘텐츠나 계정에 광고 추가하기",
-              description:
-                "새 콘텐츠를 만들지 않고, 이미 보고 있는 사람들이 있는 곳에 광고를 추가합니다.",
-            },
-          ]}
-          value={inventoryType}
-        />
-
-        <div className="rounded-lg border border-neutral-200 p-5">
-          <p className="mb-3 text-sm font-medium text-neutral-950">
-            예: {template.example}
-          </p>
-          <h3 className="text-lg font-semibold">{template.heading}</h3>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">
-            {template.description}
-          </p>
-          {template.baseDeliverables.length > 0 ? (
-            <div className="mt-5">
-              <p className="text-sm font-medium">기본 실행 내용</p>
-              <ul className="mt-2 space-y-1 text-sm text-neutral-700">
-                {template.baseDeliverables.map((item) => (
-                  <li key={item}>- {item}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {inventoryType === "existing_traffic" ? (
-            <p className="mt-4 text-sm leading-6 text-neutral-600">
-              어떤 콘텐츠나 위치에 광고를 붙일지는 실제 요청이 들어오면 광고주와 함께 정합니다. 공개 전에는 최근에도 실제 반응이 있는지 확인할 수 있습니다.
-            </p>
-          ) : null}
+        <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          {onboardingAdSlots.map((slot) => {
+            const definition = getOnboardingAdSlotDefinition(slot);
+            return (
+              <SlotCard
+                checked={adSlot === slot}
+                definition={definition}
+                key={slot}
+                onChange={() => chooseSlot(slot)}
+              />
+            );
+          })}
         </div>
+        <FieldError message={errors?.adSlot} />
 
-        {selectedPlatform === "YouTube" && inventoryType === "new_content" ? (
-          <div>
-            <label
-              className="text-sm font-medium text-neutral-950"
-              htmlFor="mentionSeconds"
-            >
-              직접 소개 시간
-            </label>
-            <select
-              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-base outline-none sm:text-sm"
-              id="mentionSeconds"
-              name="mentionSeconds"
-              onChange={(event) => setMentionSeconds(event.target.value)}
-              value={mentionSeconds}
-            >
-              {onboardingMentionSeconds.map((seconds) => (
-                <option key={seconds} value={seconds}>
-                  {seconds}초
-                </option>
-              ))}
-            </select>
-            <FieldError message={errors?.mentionSeconds} />
-          </div>
+        {adSlot === "youtube_video_mention" ? (
+          <ChoiceField
+            label="영상에서 얼마나 소개할까요?"
+            name="mentionSeconds"
+            onChange={setMentionSeconds}
+            options={onboardingMentionSeconds.map((seconds) => ({
+              value: `${seconds}`,
+              label: `${seconds}초`,
+            }))}
+            value={mentionSeconds}
+          />
         ) : null}
 
-        <div className="rounded-lg border border-neutral-200 p-5">
-          <h3 className="text-sm font-semibold">추가할 수 있는 내용</h3>
-          <div className="mt-4 grid gap-2">
-            {allowedOptions.map((optionKey) => (
-              <label
-                className="flex items-center gap-3 rounded-md border border-neutral-200 px-3 py-2 text-sm"
-                key={optionKey}
-              >
-                <input
-                  checked={optionKeys.includes(optionKey)}
-                  name="optionKeys"
-                  onChange={() => toggleOption(optionKey)}
-                  type="checkbox"
-                  value={optionKey}
-                />
-                {onboardingOptionLabels[optionKey]}
-              </label>
-            ))}
-          </div>
-          <FieldError message={errors?.optionKeys} />
-        </div>
-
-        {selectedPlatform === "Instagram" &&
-        inventoryType === "new_content" &&
-        optionKeys.includes("story_3") ? (
-          <div>
-            <label
-              className="text-sm font-medium text-neutral-950"
-              htmlFor="storyCount"
-            >
-              스토리 몇 건을 추가할까요?
-            </label>
-            <select
-              className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-base outline-none sm:text-sm"
-              id="storyCount"
-              name="storyCount"
-              onChange={(event) => setStoryCount(event.target.value)}
-              value={storyCount}
-            >
-              {onboardingStoryCounts.map((count) => (
-                <option key={count} value={count}>
-                  {count}건
-                </option>
-              ))}
-            </select>
-            <FieldError message={errors?.storyCount} />
-          </div>
+        {adSlot === "instagram_profile_or_highlight" ? (
+          <ChoiceField
+            label="어디에 광고를 보여줄까요?"
+            name="instagramExistingPlacement"
+            onChange={(value) =>
+              setInstagramExistingPlacement(value as InstagramExistingPlacement)
+            }
+            options={[
+              { value: "profile_link", label: "프로필 링크" },
+              { value: "highlight", label: "스토리 하이라이트" },
+            ]}
+            value={instagramExistingPlacement}
+          />
         ) : null}
+        <FieldError message={errors?.optionKeys ?? errors?.mentionSeconds} />
       </section>
 
-      <section
-        className={
-          step === 3 ? "space-y-5 px-5 py-7 sm:px-8 sm:py-9" : "hidden"
-        }
-      >
-        <SectionTitle title="가격과 조건을 정해주세요" />
-        <ManwonField
-          description="내 콘텐츠와 채널의 광고 가치를 정하는 금액입니다."
-          error={errors?.placementFeeManwon}
-          label="광고 자리값"
-          name="placementFeeManwon"
-          onChange={(value) => {
-            setPlacementFeeTouched(true);
-            setPlacementFeeManwon(value);
-          }}
-          value={placementFeeManwon}
+      <section className={step === 2 ? "px-5 py-7 sm:px-8 sm:py-9" : "hidden"}>
+        <SectionTitle
+          description={`${selectedPlatform}에서 실제로 운영하는 채널 정보만 알려주세요.`}
+          title="이 자리는 어느 채널에 있나요?"
         />
-        {inventoryType === "new_content" ? (
-          <>
-            <ManwonField
-              description="방문, 촬영, 편집처럼 새 콘텐츠를 만드는 데 드는 비용입니다."
-              error={errors?.productionFeeManwon}
-              label="제작비"
-              name="productionFeeManwon"
-              onChange={(value) => {
-                setProductionFeeTouched(true);
-                setProductionFeeManwon(value);
-              }}
-              value={productionFeeManwon}
-            />
-            <div>
-              <label
-                className="text-sm font-medium text-neutral-950"
-                htmlFor="turnaroundDays"
-              >
-                보통 언제까지 제작할 수 있나요?
-              </label>
-              <select
-                className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-base outline-none sm:text-sm"
-                id="turnaroundDays"
-                name="turnaroundDays"
-                onChange={(event) => setTurnaroundDays(event.target.value)}
-                value={turnaroundDays}
-              >
-                {onboardingTurnaroundDays.map((days) => (
-                  <option key={days} value={days}>
-                    {days}일 이내
-                  </option>
-                ))}
-              </select>
-              <FieldError message={errors?.turnaroundDays} />
-            </div>
-          </>
-        ) : (
-          <>
-            <input name="productionFeeManwon" type="hidden" value="0" />
-            <TextField
-              error={errors?.maintenanceDays}
-              inputMode="numeric"
-              label="얼마 동안 광고를 유지할까요?"
-              name="maintenanceDays"
-              onChange={setMaintenanceDays}
-              value={maintenanceDays}
-            />
-            <div className="flex flex-wrap gap-2">
-              {[7, 14, 30].map((days) => (
-                <button
-                  className="rounded-md border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50"
-                  key={days}
-                  onClick={() => setMaintenanceDays(`${days}`)}
-                  type="button"
-                >
-                  {days}일
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+        <div className="mt-7 space-y-5">
+          {selectedPlatform === "YouTube" ? (
+            <>
+              <TextField
+                error={errors?.youtubeName}
+                label="YouTube 채널명"
+                name="youtubeName"
+                onChange={setYoutubeName}
+                placeholder="제주한바퀴"
+                value={youtubeName}
+              />
+              <TextField
+                error={errors?.youtubeUrl}
+                label="채널 주소"
+                name="youtubeUrl"
+                onChange={setYoutubeUrl}
+                placeholder="https://youtube.com/@channel"
+                value={youtubeUrl}
+              />
+              <TextField
+                description="현재 공개된 숫자를 적어주세요."
+                error={errors?.youtubeAudienceSize}
+                inputMode="numeric"
+                label="구독자 수"
+                name="youtubeAudienceSize"
+                onChange={setYoutubeAudienceSize}
+                value={youtubeAudienceSize}
+              />
+              <input name="instagramName" type="hidden" value="" />
+              <input name="instagramUrl" type="hidden" value="" />
+              <input name="instagramAudienceSize" type="hidden" value="" />
+            </>
+          ) : (
+            <>
+              <TextField
+                error={errors?.instagramName}
+                label="Instagram 계정명"
+                name="instagramName"
+                onChange={setInstagramName}
+                placeholder="today.jeju"
+                value={instagramName}
+              />
+              <TextField
+                error={errors?.instagramUrl}
+                label="계정 주소"
+                name="instagramUrl"
+                onChange={setInstagramUrl}
+                placeholder="https://instagram.com/account"
+                value={instagramUrl}
+              />
+              <TextField
+                description="현재 공개된 숫자를 적어주세요."
+                error={errors?.instagramAudienceSize}
+                inputMode="numeric"
+                label="팔로워 수"
+                name="instagramAudienceSize"
+                onChange={setInstagramAudienceSize}
+                value={instagramAudienceSize}
+              />
+              <input name="youtubeName" type="hidden" value="" />
+              <input name="youtubeUrl" type="hidden" value="" />
+              <input name="youtubeAudienceSize" type="hidden" value="" />
+            </>
+          )}
 
-        <p className="text-sm leading-6 text-neutral-600">
-          처음 정하는 희망 가격입니다. 실제 광고 내용과 조건에 따라 광고주와 조율할 수 있습니다.
-        </p>
-
-        {isAuthenticated ? (
-          <div>
-            <label
-              className="text-sm font-medium text-neutral-950"
-              htmlFor="coverImage"
-            >
-              대표 이미지
-            </label>
-            <p className="mt-1 text-xs leading-5 text-neutral-500">
-              없어도 등록을 신청할 수 있습니다. 공개 전 확인 과정에서 추가할 수
-              있습니다.
-            </p>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 px-4 py-3 text-sm">
             <input
-              accept={allowedImageMimeTypes.join(",")}
-              className="mt-3 block w-full text-sm"
-              id="coverImage"
-              name="coverImage"
-              onChange={(event) => {
-                void handleImage(event.target.files?.[0]);
-              }}
-              ref={fileInputRef}
-              type="file"
+              checked={useDifferentDisplayName}
+              className="mt-0.5 size-4"
+              onChange={(event) => setUseDifferentDisplayName(event.target.checked)}
+              type="checkbox"
             />
-            {previewUrl ? (
-              <div className="mt-3 max-w-40 rounded-lg border border-neutral-200 p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt="대표 이미지 미리보기"
-                  className="aspect-[4/5] w-full rounded-md object-cover"
-                  src={previewUrl}
-                />
-                <button
-                  className="mt-2 text-xs text-red-700"
-                  onClick={clearImage}
-                  type="button"
-                >
-                  이미지 삭제
-                </button>
-              </div>
-            ) : null}
-            <FieldError message={imageMessage ?? errors?.image} />
-          </div>
-        ) : (
-          <div className="brand-soft rounded-xl border border-[var(--brand-border)] px-4 py-3">
-            <p className="text-sm font-medium text-[var(--brand-ink)]">
-              대표 이미지는 계정 연결 후 선택할 수 있어요.
-            </p>
-            <p className="mt-1 text-xs leading-5 text-neutral-600">
-              선택 사항이며, 이미지 없이도 등록 신청을 완료할 수 있습니다.
-            </p>
-          </div>
-        )}
+            <span>
+              <span className="font-medium text-neutral-900">
+                채널명과 다른 활동명을 사용해요
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-neutral-500">
+                선택하지 않으면 채널명을 활동명으로 사용합니다.
+              </span>
+            </span>
+          </label>
+          {useDifferentDisplayName ? (
+            <TextField
+              error={errors?.displayName}
+              label="활동명"
+              name="displayNameField"
+              onChange={setDisplayName}
+              placeholder="제주한바퀴"
+              value={displayName}
+            />
+          ) : null}
 
-        <Preview
-          displayName={displayName}
-          inventoryType={inventoryType}
-          maintenanceDays={maintenanceDays}
-          mentionSeconds={mentionSeconds}
-          optionKeys={optionKeys}
-          placementFeeKrw={manwonToKrw(placementFeeManwon)}
-          platform={selectedPlatform}
-          productionFeeKrw={
-            inventoryType === "new_content" ? manwonToKrw(productionFeeManwon) : 0
-          }
-          storyCount={storyCount}
-          template={template}
-          totalPrice={totalPrice}
-          turnaroundDays={turnaroundDays}
+          <details className="rounded-xl border border-neutral-200 px-4 py-3">
+            <summary className="cursor-pointer text-sm font-medium text-neutral-700">
+              한 줄 소개 추가하기 (선택)
+            </summary>
+            <div className="mt-4">
+              <TextArea
+                label="채널 한 줄 소개"
+                onChange={setBio}
+                placeholder="제주의 작은 공간을 영상으로 소개합니다."
+                value={bio}
+              />
+            </div>
+          </details>
+          <FieldError message={errors?.selectedPlatform} />
+        </div>
+      </section>
+
+      <section className={step === 3 ? "px-5 py-7 sm:px-8 sm:py-9" : "hidden"}>
+        <SectionTitle
+          description="처음 정하는 희망 가격입니다. 실제 조건에 따라 광고주와 조율할 수 있어요."
+          title="이 자리를 얼마에 열어둘까요?"
         />
+        {adSlot ? (
+          <div className="mt-7 space-y-6">
+            <PriceChoice
+              error={errors?.placementFeeManwon}
+              onChange={(value) => {
+                setPlacementFeeTouched(true);
+                setPlacementFeeManwon(value);
+              }}
+              options={getOnboardingSlotPriceChoices(adSlot)}
+              value={placementFeeManwon}
+            />
+
+            {inventoryType === "new_content" ? (
+              <>
+                <fieldset>
+                  <legend className="text-sm font-semibold text-neutral-950">
+                    촬영이나 편집 비용이 따로 필요한가요?
+                  </legend>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <ToggleChoice
+                      checked={!hasSeparateProductionFee}
+                      label="아니요, 위 가격에 포함할게요"
+                      onChange={() => {
+                        setHasSeparateProductionFee(false);
+                      }}
+                    />
+                    <ToggleChoice
+                      checked={hasSeparateProductionFee}
+                      label="네, 제작비를 따로 받을게요"
+                      onChange={() => {
+                        setHasSeparateProductionFee(true);
+                        if (!productionFeeTouched) {
+                          const recommended = applyRecommendedOnboardingPriceValues({
+                            currentPlacementFeeManwon: placementFeeManwon,
+                            currentProductionFeeManwon: productionFeeManwon,
+                            placementFeeTouched,
+                            productionFeeTouched,
+                            platform: selectedPlatform,
+                            inventoryType,
+                          });
+                          setProductionFeeManwon(recommended.productionFeeManwon);
+                        }
+                      }}
+                    />
+                  </div>
+                </fieldset>
+                {hasSeparateProductionFee ? (
+                  <ManwonField
+                    description="방문, 촬영, 편집에 필요한 별도 금액입니다."
+                    error={errors?.productionFeeManwon}
+                    label="제작비"
+                    name="productionFeeManwon"
+                    onChange={(value) => {
+                      setProductionFeeTouched(true);
+                      setProductionFeeManwon(value);
+                    }}
+                    value={productionFeeManwon}
+                  />
+                ) : (
+                  <input name="productionFeeManwon" type="hidden" value="0" />
+                )}
+                <ChoiceField
+                  label="보통 언제까지 만들 수 있나요?"
+                  name="turnaroundDays"
+                  onChange={setTurnaroundDays}
+                  options={onboardingTurnaroundDays.map((days) => ({
+                    value: `${days}`,
+                    label: `${days}일 이내`,
+                  }))}
+                  value={turnaroundDays}
+                />
+                <FieldError message={errors?.turnaroundDays} />
+                <input name="maintenanceDays" type="hidden" value="" />
+              </>
+            ) : (
+              <>
+                <input name="productionFeeManwon" type="hidden" value="0" />
+                <ChoiceField
+                  label="얼마 동안 광고를 유지할까요?"
+                  name="maintenanceDays"
+                  onChange={setMaintenanceDays}
+                  options={[7, 14, 30].map((days) => ({
+                    value: `${days}`,
+                    label: `${days}일`,
+                  }))}
+                  value={maintenanceDays}
+                />
+                <FieldError message={errors?.maintenanceDays} />
+                <input name="turnaroundDays" type="hidden" value="" />
+              </>
+            )}
+
+            {isAuthenticated ? (
+              <ImageField
+                error={imageMessage ?? errors?.image}
+                fileInputRef={fileInputRef}
+                onChange={handleImage}
+                onClear={clearImage}
+                previewUrl={previewUrl}
+              />
+            ) : (
+              <div className="rounded-xl bg-neutral-50 px-4 py-3 text-sm leading-6 text-neutral-600">
+                대표 이미지는 카카오 연결 후 선택할 수 있어요. 없어도 신청할 수
+                있습니다.
+              </div>
+            )}
+
+            <OnboardingPreview
+              adSlot={adSlot}
+              channelName={selectedChannelName}
+              maintenanceDays={maintenanceDays}
+              mentionSeconds={mentionSeconds}
+              optionKeys={optionKeys}
+              placementFeeKrw={manwonToKrw(placementFeeManwon)}
+              productionFeeKrw={manwonToKrw(effectiveProductionFee)}
+              totalPrice={totalPrice}
+              turnaroundDays={turnaroundDays}
+            />
+          </div>
+        ) : null}
       </section>
 
       <div className="px-5 sm:px-8">
         {draftMessage || state.message ? (
-          <p
-            className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
-            role="status"
-          >
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="status">
             {draftMessage ?? state.message}
           </p>
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-neutral-200 bg-neutral-50/70 px-5 py-5 sm:px-8">
+      <footer className="flex items-center gap-3 border-t border-neutral-200 bg-neutral-50/80 px-5 py-5 sm:px-8">
         {step > 1 ? (
           <button
-            className="brand-outline rounded-md border px-4 py-2 text-sm font-semibold transition"
-            onClick={() =>
-              setStep((current) => Math.max(1, current - 1) as 1 | 2 | 3)
-            }
+            className="brand-outline min-h-12 rounded-xl border px-5 text-sm font-semibold"
+            onClick={() => setStep((current) => Math.max(1, current - 1) as 1 | 2 | 3)}
             type="button"
           >
             이전
@@ -779,70 +724,57 @@ export function CreatorOnboardingForm({
         ) : null}
         {step < 3 ? (
           <button
-            className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition"
+            className="brand-primary ml-auto min-h-12 rounded-xl border px-6 text-sm font-semibold"
             onClick={goToNextStep}
             type="button"
           >
             다음
           </button>
+        ) : isAuthenticated ? (
+          <SubmitButton />
         ) : (
-          <>
-            {isAuthenticated ? (
-              <SubmitButton />
-            ) : (
-              <button
-                className="brand-primary rounded-xl border px-5 py-3 text-sm font-semibold transition"
-                onClick={connectKakaoAndResume}
-                type="button"
-              >
-                카카오로 연결하고 마지막 확인하기
-              </button>
-            )}
-            {!isAuthenticated ? (
-              <p className="basis-full text-xs leading-5 text-neutral-500">
-                계정을 연결하면 작성한 내용을 불러와 마지막 확인 후 신청할 수
-                있습니다. 지금 단계에서는 아무 내용도 제출되지 않습니다.
-              </p>
-            ) : null}
-          </>
+          <button
+            className="brand-primary ml-auto min-h-12 rounded-xl border px-5 text-sm font-semibold"
+            onClick={connectKakaoAndResume}
+            type="button"
+          >
+            카카오로 연결하고 등록 확인하기
+          </button>
         )}
-      </div>
+      </footer>
+      {step === 3 && !isAuthenticated ? (
+        <p className="bg-neutral-50/80 px-5 pb-5 text-xs leading-5 text-neutral-500 sm:px-8">
+          계정을 연결하기 전에는 아무 내용도 제출되지 않습니다.
+        </p>
+      ) : null}
     </form>
   );
 }
 
 function StepNav({ step }: { step: number }) {
-  const labels = ["내 채널", "광고 상품", "가격과 확인"];
-
+  const labels = ["광고 자리", "채널", "가격과 확인"];
   return (
-    <header className="border-b border-neutral-200 px-5 pb-4 pt-5 sm:px-8 sm:pb-5 sm:pt-6">
+    <header className="border-b border-neutral-200 px-5 pb-4 pt-5 sm:px-8 sm:pt-6">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm font-semibold text-neutral-900">
-          크리에이터 등록
-        </p>
-        <p className="text-xs font-medium text-neutral-500">
-          {step} / {labels.length}
-        </p>
+        <p className="text-sm font-semibold text-neutral-900">첫 광고 자리 등록</p>
+        <p className="text-xs font-medium text-neutral-500">{step} / 3</p>
       </div>
       <div
-        aria-label={`${labels.length}단계 중 ${step}단계: ${labels[step - 1]}`}
-        className="mt-4 h-1 overflow-hidden rounded-full bg-neutral-100"
-        role="progressbar"
-        aria-valuemax={labels.length}
+        aria-label={`3단계 중 ${step}단계: ${labels[step - 1]}`}
+        aria-valuemax={3}
         aria-valuemin={1}
         aria-valuenow={step}
+        className="mt-4 h-1 overflow-hidden rounded-full bg-neutral-100"
+        role="progressbar"
       >
         <div
-          className="h-full rounded-full bg-[var(--brand-ink)] transition-[width] motion-reduce:transition-none"
-          style={{ width: `${(step / labels.length) * 100}%` }}
+          className="h-full rounded-full bg-[var(--brand-primary)] transition-[width] motion-reduce:transition-none"
+          style={{ width: `${(step / 3) * 100}%` }}
         />
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] font-medium text-neutral-400 sm:text-xs">
         {labels.map((label, index) => (
-          <span
-            className={step === index + 1 ? "text-[var(--brand-ink)]" : ""}
-            key={label}
-          >
+          <span className={step === index + 1 ? "text-[var(--brand-ink)]" : ""} key={label}>
             {label}
           </span>
         ))}
@@ -851,39 +783,78 @@ function StepNav({ step }: { step: number }) {
   );
 }
 
-function SectionTitle({
-  title,
-  description,
-}: {
-  title: string;
-  description?: string;
-}) {
+function SectionTitle({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      {description ? (
-        <p className="mt-2 text-sm text-neutral-600">{description}</p>
-      ) : null}
+      <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
+      <p className="mt-2 text-sm leading-6 text-neutral-600">{description}</p>
     </div>
   );
 }
 
-function ChannelCard({
-  children,
-  title,
+function SlotCard({
+  checked,
+  definition,
+  onChange,
 }: {
-  children: React.ReactNode;
-  title: string;
+  checked: boolean;
+  definition: ReturnType<typeof getOnboardingAdSlotDefinition>;
+  onChange: () => void;
 }) {
   return (
-    <section className="rounded-lg border border-neutral-200 p-5">
-      <h3 className="text-base font-semibold">{title}</h3>
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">{children}</div>
-    </section>
+    <label
+      className={`cursor-pointer rounded-2xl border p-4 transition ${
+        checked
+          ? "border-[var(--brand-primary)] bg-[var(--brand-soft)] ring-1 ring-[var(--brand-primary)]"
+          : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50"
+      }`}
+    >
+      <input
+        checked={checked}
+        className="sr-only"
+        name="adSlot"
+        onChange={onChange}
+        type="radio"
+        value={definition.id}
+      />
+      <SlotMiniature slot={definition.id} />
+      <span className="mt-4 block font-semibold text-neutral-950">{definition.title}</span>
+      <span className="mt-1 block text-sm leading-5 text-neutral-600">{definition.description}</span>
+      <span className="mt-3 block border-t border-black/5 pt-3 text-xs leading-5 text-neutral-500">
+        예: {definition.example}
+      </span>
+    </label>
   );
 }
 
-function ChoiceCards({
+function SlotMiniature({ slot }: { slot: OnboardingAdSlot }) {
+  const isVideo = slot === "youtube_video_mention" || slot === "instagram_reel_mention";
+  const isInstagram = slot.startsWith("instagram");
+  return (
+    <span aria-hidden="true" className="block h-14 rounded-xl bg-white/90 p-2.5 shadow-sm ring-1 ring-black/5">
+      {isVideo ? (
+        <span className="flex h-full items-end gap-1.5">
+          <span className={`block h-full rounded-md bg-neutral-200 ${isInstagram ? "w-7" : "w-12"}`} />
+          <span className="flex flex-1 flex-col gap-1.5">
+            <span className="h-1.5 w-4/5 rounded bg-neutral-200" />
+            <span className="h-1.5 w-1/2 rounded bg-neutral-200" />
+            <span className="mt-auto h-1.5 rounded bg-neutral-100">
+              <span className="block h-full w-1/3 rounded bg-[var(--brand-primary)]" />
+            </span>
+          </span>
+        </span>
+      ) : (
+        <span className="flex h-full flex-col justify-center gap-2">
+          <span className="h-1.5 w-2/5 rounded bg-neutral-200" />
+          <span className="h-2 rounded bg-[var(--brand-soft)] ring-1 ring-[var(--brand-border)]" />
+          <span className="h-1.5 w-3/4 rounded bg-neutral-200" />
+        </span>
+      )}
+    </span>
+  );
+}
+
+function ChoiceField({
   label,
   name,
   options,
@@ -892,20 +863,20 @@ function ChoiceCards({
 }: {
   label: string;
   name: string;
-  options: Array<{ value: string; label: string; description?: string }>;
+  options: Array<{ value: string; label: string }>;
   value: string;
   onChange: (value: string) => void;
 }) {
   return (
-    <fieldset>
-      <legend className="text-sm font-medium text-neutral-950">{label}</legend>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+    <fieldset className="mt-6">
+      <legend className="text-sm font-semibold text-neutral-950">{label}</legend>
+      <div className="mt-3 flex flex-wrap gap-2">
         {options.map((option) => (
           <label
-            className={`cursor-pointer rounded-lg border p-4 ${
+            className={`cursor-pointer rounded-xl border px-4 py-3 text-sm font-medium ${
               option.value === value
-                ? "border-[var(--brand-primary-hover)] bg-[var(--brand-soft)]"
-                : "border-neutral-200"
+                ? "border-[var(--brand-primary)] bg-[var(--brand-soft)] text-[var(--brand-ink)]"
+                : "border-neutral-200 bg-white text-neutral-700"
             }`}
             key={option.value}
           >
@@ -917,12 +888,7 @@ function ChoiceCards({
               type="radio"
               value={option.value}
             />
-            <span className="font-medium">{option.label}</span>
-            {option.description ? (
-              <span className="mt-2 block text-sm leading-6 text-neutral-600">
-                {option.description}
-              </span>
-            ) : null}
+            {option.label}
           </label>
         ))}
       </div>
@@ -930,50 +896,70 @@ function ChoiceCards({
   );
 }
 
-function ManwonField({
-  description,
-  error,
-  label,
-  name,
-  onChange,
-  value,
-}: {
-  description: string;
-  error?: string;
-  label: string;
-  name: string;
-  onChange: (value: string) => void;
-  value: string;
-}) {
+function ToggleChoice({ checked, label, onChange }: { checked: boolean; label: string; onChange: () => void }) {
   return (
-    <div>
-      <label className="text-sm font-medium text-neutral-950" htmlFor={name}>
-        {label}
-      </label>
-      <div className="mt-2 flex rounded-md border border-neutral-300 focus-within:border-neutral-950">
-        <input
-          className="min-w-0 flex-1 px-3 py-2 text-base outline-none sm:text-sm"
-          id={name}
-          inputMode="decimal"
-          name={name}
-          onChange={(event) => onChange(event.target.value)}
-          type="text"
-          value={value}
-        />
-        <span className="border-l border-neutral-200 px-3 py-2 text-sm text-neutral-500">
-          만원
-        </span>
+    <button
+      aria-pressed={checked}
+      className={`min-h-14 rounded-xl border px-4 py-3 text-left text-sm font-medium ${
+        checked
+          ? "border-[var(--brand-primary)] bg-[var(--brand-soft)] text-[var(--brand-ink)]"
+          : "border-neutral-200 bg-white text-neutral-700"
+      }`}
+      onClick={onChange}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+
+function PriceChoice({
+  error,
+  options,
+  value,
+  onChange,
+}: {
+  error?: string;
+  options: string[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const isPreset = options.includes(value);
+  return (
+    <fieldset>
+      <legend className="text-sm font-semibold text-neutral-950">이 광고 자리의 희망 가격은 얼마인가요?</legend>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {options.map((option) => (
+          <ToggleChoice
+            checked={value === option}
+            key={option}
+            label={`${option}만원`}
+            onChange={() => onChange(option)}
+          />
+        ))}
+        <ToggleChoice checked={!isPreset} label="직접 입력" onChange={() => onChange("")} />
       </div>
-      <p className="mt-1 text-xs text-neutral-500">{description}</p>
-      {value ? (
-        <p className="mt-1 text-xs text-neutral-600">{value}만원</p>
-      ) : null}
-      <FieldError message={error} />
-    </div>
+      {!isPreset ? (
+        <div className="mt-3">
+          <ManwonField
+            description="0.5만원부터 99만원까지 입력할 수 있어요."
+            error={error}
+            label="희망 가격 직접 입력"
+            name="placementFeeManwon"
+            onChange={onChange}
+            value={value}
+          />
+        </div>
+      ) : (
+        <input name="placementFeeManwon" type="hidden" value={value} />
+      )}
+      {isPreset ? <FieldError message={error} /> : null}
+    </fieldset>
   );
 }
 
 function TextField({
+  description,
   error,
   inputMode,
   label,
@@ -982,6 +968,7 @@ function TextField({
   placeholder,
   value,
 }: {
+  description?: string;
   error?: string;
   inputMode?: "numeric";
   label: string;
@@ -992,11 +979,9 @@ function TextField({
 }) {
   return (
     <div>
-      <label className="text-sm font-medium text-neutral-950" htmlFor={name}>
-        {label}
-      </label>
+      <label className="text-sm font-semibold text-neutral-950" htmlFor={name}>{label}</label>
       <input
-        className="brand-focus mt-2 w-full rounded-md border border-neutral-300 px-3 py-2 text-base outline-none sm:text-sm"
+        className="brand-focus mt-2 min-h-12 w-full rounded-xl border border-neutral-300 px-4 text-base outline-none"
         id={name}
         inputMode={inputMode}
         name={name}
@@ -1005,33 +990,19 @@ function TextField({
         type="text"
         value={value}
       />
+      {description ? <p className="mt-1.5 text-xs text-neutral-500">{description}</p> : null}
       <FieldError message={error} />
     </div>
   );
 }
 
-function TextArea({
-  label,
-  name,
-  onChange,
-  placeholder,
-  value,
-}: {
-  label: string;
-  name: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  value: string;
-}) {
+function TextArea({ label, onChange, placeholder, value }: { label: string; onChange: (value: string) => void; placeholder: string; value: string }) {
   return (
     <div>
-      <label className="text-sm font-medium text-neutral-950" htmlFor={name}>
-        {label}
-      </label>
+      <label className="text-sm font-semibold text-neutral-950" htmlFor="bio">{label}</label>
       <textarea
-        className="brand-focus mt-2 min-h-20 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-base outline-none sm:text-sm"
-        id={name}
-        name={name}
+        className="brand-focus mt-2 min-h-24 w-full resize-y rounded-xl border border-neutral-300 px-4 py-3 text-base outline-none"
+        id="bio"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}
@@ -1040,137 +1011,109 @@ function TextArea({
   );
 }
 
-function Preview({
-  displayName,
-  inventoryType,
-  maintenanceDays,
-  mentionSeconds,
-  optionKeys,
-  placementFeeKrw,
-  platform,
-  productionFeeKrw,
-  storyCount,
-  template,
-  totalPrice,
-  turnaroundDays,
-}: {
-  displayName: string;
-  inventoryType: OnboardingInventoryType;
-  maintenanceDays: string;
-  mentionSeconds: string;
-  optionKeys: OnboardingOptionKey[];
-  placementFeeKrw: number;
-  platform: OnboardingPlatform;
-  productionFeeKrw: number;
-  storyCount: string;
-  template: ReturnType<typeof getOnboardingTemplate>;
-  totalPrice: number;
-  turnaroundDays: string;
-}) {
-  const deliverables = [...template.baseDeliverables];
-
-  if (platform === "YouTube" && inventoryType === "new_content") {
-    deliverables[0] = `영상 안에서 약 ${mentionSeconds}초 직접 소개`;
-  }
-
-  for (const optionKey of optionKeys) {
-    if (optionKey === "story_3") {
-      deliverables.push(`스토리 ${storyCount}건 추가`);
-      continue;
-    }
-
-    deliverables.push(onboardingOptionLabels[optionKey]);
-  }
-
+function ManwonField({ description, error, label, name, onChange, value }: { description: string; error?: string; label: string; name: string; onChange: (value: string) => void; value: string }) {
   return (
-    <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-5">
-      <h3 className="text-base font-semibold">마지막 미리보기</h3>
-      <div className="mt-4 space-y-4 text-sm leading-6">
-        <p className="font-medium text-neutral-950">
-          {displayName || "활동명"}
-        </p>
-        <p>{platform}</p>
-        <p className="font-medium text-neutral-950">{template.heading}</p>
-        <div>
-          <p className="font-medium">실행되는 내용</p>
-          <ul className="mt-1 space-y-1">
-            {deliverables.map((deliverable) => (
-              <li key={deliverable}>✓ {deliverable}</li>
-            ))}
-          </ul>
-        </div>
-        {inventoryType === "new_content" ? (
-          <p>제작 기간 {turnaroundDays}일 이내</p>
-        ) : (
-          <p>유지 기간 {maintenanceDays}일</p>
-        )}
-        <div className="space-y-1">
-          <p>광고 자리값 {formatKrw(placementFeeKrw)}</p>
-          {inventoryType === "new_content" ? (
-            <p>제작비 {formatKrw(productionFeeKrw)}</p>
-          ) : null}
-          <p className="font-semibold text-neutral-950">
-            광고주가 보는 총가격 {formatKrw(totalPrice)}
-          </p>
-        </div>
+    <div>
+      <label className="text-sm font-semibold text-neutral-950" htmlFor={name}>{label}</label>
+      <div className="mt-2 flex min-h-12 rounded-xl border border-neutral-300 bg-white focus-within:border-[var(--brand-primary)]">
+        <input
+          className="min-w-0 flex-1 rounded-l-xl px-4 text-base outline-none"
+          id={name}
+          inputMode="decimal"
+          name={name}
+          onChange={(event) => onChange(event.target.value)}
+          type="text"
+          value={value}
+        />
+        <span className="flex items-center border-l border-neutral-200 px-4 text-sm text-neutral-500">만원</span>
       </div>
-      <p className="mt-4 text-xs text-neutral-500">
-        제출 후 채널과 광고 상품을 확인한 뒤 공개됩니다.
+      <p className="mt-1.5 text-xs text-neutral-500">{description}</p>
+      <FieldError message={error} />
+    </div>
+  );
+}
+
+function ImageField({ error, fileInputRef, onChange, onClear, previewUrl }: { error?: string | null; fileInputRef: React.RefObject<HTMLInputElement | null>; onChange: (file: File | undefined) => Promise<void>; onClear: () => void; previewUrl: string | null }) {
+  return (
+    <div className="border-t border-neutral-200 pt-5">
+      <label className="text-sm font-semibold text-neutral-950" htmlFor="coverImage">대표 이미지 (선택)</label>
+      <p className="mt-1 text-xs leading-5 text-neutral-500">
+        대표 이미지는 없어도 신청할 수 있습니다. 공개 전 확인 과정에서 추가할 수 있어요.
       </p>
+      <input
+        accept={allowedImageMimeTypes.join(",")}
+        className="mt-3 block w-full text-sm"
+        id="coverImage"
+        name="coverImage"
+        onChange={(event) => void onChange(event.target.files?.[0])}
+        ref={fileInputRef}
+        type="file"
+      />
+      {previewUrl ? (
+        <div className="mt-3 w-32 rounded-xl border border-neutral-200 p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="대표 이미지 미리보기" className="aspect-[4/5] w-full rounded-lg object-cover" src={previewUrl} />
+          <button className="mt-2 text-xs text-red-700" onClick={onClear} type="button">이미지 삭제</button>
+        </div>
+      ) : null}
+      <FieldError message={error} />
+    </div>
+  );
+}
+
+function OnboardingPreview({ adSlot, channelName, maintenanceDays, mentionSeconds, optionKeys, placementFeeKrw, productionFeeKrw, totalPrice, turnaroundDays }: { adSlot: OnboardingAdSlot; channelName: string; maintenanceDays: string; mentionSeconds: string; optionKeys: OnboardingOptionKey[]; placementFeeKrw: number; productionFeeKrw: number; totalPrice: number; turnaroundDays: string }) {
+  const definition = getOnboardingAdSlotDefinition(adSlot);
+  const presentation = getOnboardingSlotPresentation({
+    adSlot,
+    mentionSeconds: Number(mentionSeconds) as 15 | 30 | 60,
+    optionKeys,
+    maintenanceDays: definition.inventoryType === "existing_traffic" ? Number(maintenanceDays) : null,
+    turnaroundDays: definition.inventoryType === "new_content" ? Number(turnaroundDays) as 7 | 14 | 30 : null,
+  });
+  return (
+    <section className="rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-soft)] p-5">
+      <p className="text-xs font-semibold text-[var(--brand-ink)]">내가 등록할 광고 자리</p>
+      <h2 className="mt-2 text-lg font-semibold text-neutral-950">{presentation.title}</h2>
+      <p className="mt-1 text-sm text-neutral-600">{channelName || "채널명"}</p>
+      <dl className="mt-5 grid gap-3 border-t border-black/5 pt-4 text-sm sm:grid-cols-2">
+        {adSlot === "youtube_video_mention" ? <PreviewItem label="소개 시간" value={`${mentionSeconds}초`} /> : null}
+        {definition.inventoryType === "new_content" ? <PreviewItem label="제작 기간" value={`${turnaroundDays}일 이내`} /> : <PreviewItem label="유지 기간" value={`${maintenanceDays}일`} />}
+        <PreviewItem label="희망 가격" value={formatKrw(placementFeeKrw)} />
+        {productionFeeKrw > 0 ? <PreviewItem label="제작비" value={formatKrw(productionFeeKrw)} /> : null}
+        <PreviewItem label="예상 총액" value={formatKrw(totalPrice)} />
+      </dl>
     </section>
   );
 }
 
+function PreviewItem({ label, value }: { label: string; value: string }) {
+  return <div><dt className="text-xs text-neutral-500">{label}</dt><dd className="mt-0.5 font-medium text-neutral-900">{value}</dd></div>;
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus();
-
   return (
-    <button
-      className="brand-primary rounded-xl border px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed"
-      disabled={pending}
-      type="submit"
-    >
-      {pending ? "등록 신청 중" : "등록 신청하기"}
+    <button className="brand-primary ml-auto min-h-12 rounded-xl border px-6 text-sm font-semibold disabled:cursor-not-allowed" disabled={pending} type="submit">
+      {pending ? "등록 신청 중" : "광고 자리 등록 신청하기"}
     </button>
   );
 }
 
 function FieldError({ message }: { message?: string | null }) {
-  if (!message) {
-    return null;
-  }
-
-  return (
-    <p className="mt-2 text-sm text-red-700" role="alert">
-      {message}
-    </p>
-  );
+  return message ? <p className="mt-2 text-sm text-red-700" role="alert">{message}</p> : null;
 }
 
 function manwonToKrw(value: string) {
   const number = Number(value);
   const krw = number * 10_000;
-  return Number.isFinite(number) && Number.isSafeInteger(krw) && number >= 0
-    ? krw
-    : 0;
+  return Number.isFinite(number) && Number.isSafeInteger(krw) && number >= 0 ? krw : 0;
 }
 
 function formatKrw(value: number) {
   if (value > 0 && value % 10_000 === 0) {
     return `${new Intl.NumberFormat("ko-KR").format(value / 10_000)}만원`;
   }
-
   return `${new Intl.NumberFormat("ko-KR").format(value)}원`;
-}
-
-function isCompleteChannel(input: {
-  name: string;
-  url: string;
-  audienceSize: string;
-}) {
-  return Boolean(
-    input.name.trim() && input.url.trim() && input.audienceSize.trim(),
-  );
 }
 
 function readDraftFromSession() {
@@ -1198,16 +1141,12 @@ async function resizeImage(file: File) {
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d");
-
   if (!context) {
     return file;
   }
-
   context.drawImage(image, 0, 0, width, height);
-
   const blob = await new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, file.type, file.type === "image/png" ? undefined : 0.86);
   });
-
   return blob ? new File([blob], file.name, { type: file.type }) : file;
 }

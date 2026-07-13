@@ -18,6 +18,7 @@ describe("creator onboarding authentication boundary", () => {
     );
     expect(source).not.toContain('formData.get("userId")');
     expect(source).not.toContain('formData.get("creatorId")');
+    expect(source).toContain('adSlot: formData.get("adSlot")');
   });
 
   it("clears the browser draft only from the successful complete page", () => {
@@ -31,10 +32,12 @@ describe("creator onboarding authentication boundary", () => {
     );
 
     expect(formSource).not.toContain("clearCreatorOnboardingDraft");
-    expect(formSource).toContain("카카오로 연결하고 마지막 확인하기");
+    expect(formSource).toContain("카카오로 연결하고 등록 확인하기");
     expect(formSource).toContain("<SubmitButton />");
     expect(formSource).toContain("if (!isAuthenticated)");
     expect(formSource).toContain("event.preventDefault()");
     expect(completeSource).toContain("CreatorOnboardingDraftCleanup");
+    expect(completeSource).toContain("첫 광고 자리 등록을 신청했습니다.");
+    expect(completeSource).toContain("보통 1영업일 안에 확인합니다.");
   });
 });

@@ -39,6 +39,7 @@ export async function submitCreatorOnboarding(
   }
 
   const parsed = validateCreatorOnboardingInput({
+    adSlot: formData.get("adSlot"),
     displayName: formData.get("displayName"),
     youtubeName: formData.get("youtubeName"),
     youtubeUrl: formData.get("youtubeUrl"),
@@ -132,7 +133,7 @@ export async function submitCreatorOnboarding(
     console.error("creator_onboarding_listing_insert_failed", {
       code: listingError.code ?? null,
     });
-    return { message: "첫 광고 상품을 저장하지 못했습니다." };
+    return { message: "첫 광고 자리를 저장하지 못했습니다." };
   }
 
   revalidatePath("/");

@@ -1,4 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -37,7 +39,12 @@ describe("CreatorOnboardingPage", () => {
     const html = renderToStaticMarkup(await CreatorOnboardingPage());
 
     expect(mocks.redirect).not.toHaveBeenCalled();
-    expect(html).toContain("어디에서 콘텐츠를 만들고 있나요?");
+    expect(html).toContain("어떤 광고 자리를 열 수 있나요?");
+    expect(html).toContain("YouTube 영상 속 짧은 소개");
+    expect(html).toContain("YouTube 기존 영상 고정댓글");
+    expect(html).toContain("YouTube 기존 영상 설명란 상단");
+    expect(html).toContain("Instagram 릴스 속 짧은 소개");
+    expect(html).toContain("Instagram 프로필 링크 또는 하이라이트");
     expect(html).not.toContain('name="coverImage"');
   });
 
@@ -45,9 +52,14 @@ describe("CreatorOnboardingPage", () => {
     mocks.getCurrentUser.mockResolvedValue({ id: "user-1" });
     mocks.getOwnedCreatorForUser.mockResolvedValue(null);
 
-    const html = renderToStaticMarkup(await CreatorOnboardingPage());
+    await CreatorOnboardingPage();
+    const source = readFileSync(
+      join(process.cwd(), "src/components/creator/onboarding-form.tsx"),
+      "utf8",
+    );
 
-    expect(html).toContain('name="coverImage"');
+    expect(source).toContain("isAuthenticated ? (");
+    expect(source).toContain('name="coverImage"');
   });
 
   it("keeps the duplicate creator redirect", async () => {

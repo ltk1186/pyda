@@ -18,6 +18,13 @@ export const onboardingOptionKeys = [
 export const onboardingTurnaroundDays = [7, 14, 30] as const;
 export const onboardingMentionSeconds = [15, 30, 60] as const;
 export const onboardingStoryCounts = [1, 2, 3] as const;
+export const onboardingAdSlots = [
+  "youtube_video_mention",
+  "youtube_pinned_comment",
+  "youtube_description_top",
+  "instagram_reel_mention",
+  "instagram_profile_or_highlight",
+] as const;
 
 export type OnboardingPlatform = (typeof onboardingPlatforms)[number];
 export type OnboardingInventoryType =
@@ -28,6 +35,8 @@ export type OnboardingTurnaroundDays =
 export type OnboardingMentionSeconds =
   (typeof onboardingMentionSeconds)[number];
 export type OnboardingStoryCount = (typeof onboardingStoryCounts)[number];
+export type OnboardingAdSlot = (typeof onboardingAdSlots)[number];
+export type InstagramExistingPlacement = "profile_link" | "highlight";
 
 export type OnboardingChannelProfile = {
   name: string;
@@ -39,15 +48,17 @@ export type OnboardingChannelProfiles = Partial<
   Record<"youtube" | "instagram", OnboardingChannelProfile>
 >;
 
-export type OnboardingTemplate = {
-  heading: string;
+export type OnboardingAdSlotDefinition = {
+  id: OnboardingAdSlot;
+  title: string;
   description: string;
   example: string;
-  baseDeliverables: string[];
-  optionKeys: OnboardingOptionKey[];
+  platform: OnboardingPlatform;
+  inventoryType: OnboardingInventoryType;
 };
 
 export type CreatorOnboardingInput = {
+  adSlot: OnboardingAdSlot;
   displayName: string;
   bio: string | null;
   selectedPlatform: OnboardingPlatform;
@@ -64,6 +75,7 @@ export type CreatorOnboardingInput = {
 
 export type CreatorOnboardingErrors = Partial<
   Record<
+    | "adSlot"
     | "displayName"
     | "selectedPlatform"
     | "youtubeName"
@@ -137,43 +149,49 @@ const manwon = 10_000;
 const minPlacementFeeKrw = 5_000;
 const maxOnboardingFeeKrw = 990_000;
 
-const onboardingTemplates: Record<
-  `${OnboardingPlatform}:${OnboardingInventoryType}`,
-  OnboardingTemplate
+export const onboardingAdSlotDefinitions: Record<
+  OnboardingAdSlot,
+  OnboardingAdSlotDefinition
 > = {
-  "YouTube:new_content": {
-    heading: "새 영상 안에서 직접 소개하기",
-    description:
-      "앞으로 만드는 YouTube 영상 안에서 광고주의 매장, 상품 또는 서비스를 직접 소개합니다.",
+  youtube_video_mention: {
+    id: "youtube_video_mention",
+    title: "YouTube 영상 속 짧은 소개",
+    description: "새 영상 안에서 매장, 상품 또는 서비스를 짧게 소개합니다.",
     example: "제주 여행 영상 안에서 카페를 30초 소개",
-    baseDeliverables: [
-      "영상 안에서 크리에이터가 직접 소개",
-      "매장명, 혜택 또는 링크를 화면에 표시",
-    ],
-    optionKeys: ["coupon_code", "dedicated_link", "brand_badge"],
+    platform: "YouTube",
+    inventoryType: "new_content",
   },
-  "Instagram:new_content": {
-    heading: "새 릴스로 방문이나 사용 경험 소개하기",
-    description:
-      "직접 방문하거나 사용한 모습을 Instagram 릴스 1편으로 소개합니다.",
-    example: "릴스 1편에서 매장 방문이나 제품 사용 소개",
-    baseDeliverables: ["릴스 1편 제작", "방문 또는 사용 장면 포함"],
-    optionKeys: ["story_3", "coupon_code", "dedicated_link"],
+  youtube_pinned_comment: {
+    id: "youtube_pinned_comment",
+    title: "YouTube 기존 영상 고정댓글",
+    description: "이미 올라간 영상의 고정댓글에 광고 문구와 링크를 올립니다.",
+    example: "조회가 계속 나오는 여행 영상에 카페 예약 링크 고정",
+    platform: "YouTube",
+    inventoryType: "existing_traffic",
   },
-  "YouTube:existing_traffic": {
-    heading: "기존 영상에 광고 추가하기",
-    description: "이미 올라가 있고 지금도 사람들이 보는 영상에 광고를 추가합니다.",
-    example: "기존 영상의 고정댓글이나 설명란 상단에 광고 추가",
-    baseDeliverables: [],
-    optionKeys: ["pinned_comment", "description_top"],
+  youtube_description_top: {
+    id: "youtube_description_top",
+    title: "YouTube 기존 영상 설명란 상단",
+    description: "기존 영상 설명란 첫 부분에 광고 문구와 링크를 올립니다.",
+    example: "영상 설명란 첫 줄에 할인 코드와 예약 링크 표시",
+    platform: "YouTube",
+    inventoryType: "existing_traffic",
   },
-  "Instagram:existing_traffic": {
-    heading: "기존 Instagram 계정에 광고 노출하기",
-    description:
-      "새 릴스를 만들지 않고, 현재 계정을 방문하는 사람들이 광고를 볼 수 있게 합니다.",
-    example: "프로필 링크나 하이라이트에 광고 노출",
-    baseDeliverables: [],
-    optionKeys: ["profile_link", "highlight"],
+  instagram_reel_mention: {
+    id: "instagram_reel_mention",
+    title: "Instagram 릴스 속 짧은 소개",
+    description: "새 릴스 안에서 매장 방문이나 상품 사용 모습을 소개합니다.",
+    example: "릴스 안에서 카페 방문 장면과 메뉴 소개",
+    platform: "Instagram",
+    inventoryType: "new_content",
+  },
+  instagram_profile_or_highlight: {
+    id: "instagram_profile_or_highlight",
+    title: "Instagram 프로필 링크 또는 하이라이트",
+    description: "프로필 링크나 하이라이트에 광고를 일정 기간 노출합니다.",
+    example: "프로필에서 예약 링크를 보여주거나 하이라이트에 광고 보관",
+    platform: "Instagram",
+    inventoryType: "existing_traffic",
   },
 };
 
@@ -210,18 +228,30 @@ export const onboardingOptionLabels: Record<OnboardingOptionKey, string> = {
   highlight: "스토리 하이라이트에 광고 남기기",
 };
 
-export function getOnboardingTemplate(
-  platform: OnboardingPlatform,
-  inventoryType: OnboardingInventoryType,
-) {
-  return onboardingTemplates[`${platform}:${inventoryType}`];
+export function getOnboardingAdSlotDefinition(slot: OnboardingAdSlot) {
+  return onboardingAdSlotDefinitions[slot];
 }
 
-export function getAllowedOnboardingOptions(input: {
-  platform: OnboardingPlatform;
-  inventoryType: OnboardingInventoryType;
+export function getOnboardingSlotSelection(input: {
+  adSlot: OnboardingAdSlot;
+  instagramPlacement?: InstagramExistingPlacement;
 }) {
-  return getOnboardingTemplate(input.platform, input.inventoryType).optionKeys;
+  const definition = getOnboardingAdSlotDefinition(input.adSlot);
+  let optionKeys: OnboardingOptionKey[] = [];
+
+  if (input.adSlot === "youtube_pinned_comment") {
+    optionKeys = ["pinned_comment"];
+  } else if (input.adSlot === "youtube_description_top") {
+    optionKeys = ["description_top"];
+  } else if (input.adSlot === "instagram_profile_or_highlight") {
+    optionKeys = [input.instagramPlacement ?? "profile_link"];
+  }
+
+  return {
+    platform: definition.platform,
+    inventoryType: definition.inventoryType,
+    optionKeys,
+  };
 }
 
 export function getRecommendedOnboardingPrice(input: {
@@ -229,6 +259,19 @@ export function getRecommendedOnboardingPrice(input: {
   inventoryType: OnboardingInventoryType;
 }) {
   return onboardingRecommendedPrices[`${input.platform}:${input.inventoryType}`];
+}
+
+export function getOnboardingSlotPriceChoices(slot: OnboardingAdSlot) {
+  if (slot === "youtube_video_mention") {
+    return ["10", "20", "30"];
+  }
+  if (slot === "instagram_reel_mention") {
+    return ["5", "10", "20"];
+  }
+  if (slot === "instagram_profile_or_highlight") {
+    return ["1", "3", "5"];
+  }
+  return ["3", "5", "10"];
 }
 
 export function applyRecommendedOnboardingPriceValues(input: {
@@ -252,27 +295,14 @@ export function applyRecommendedOnboardingPriceValues(input: {
   };
 }
 
-export function inferOnboardingSelectedPlatform(input: {
-  current: OnboardingPlatform;
-  youtubeComplete: boolean;
-  instagramComplete: boolean;
-}): OnboardingPlatform {
-  if (input.instagramComplete && !input.youtubeComplete) {
-    return "Instagram";
-  }
-
-  if (input.youtubeComplete && !input.instagramComplete) {
-    return "YouTube";
-  }
-
-  return input.current;
-}
-
 export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
   const errors: CreatorOnboardingErrors = {};
+  const adSlotValue = stringValue(input.adSlot);
   const displayName = stringValue(input.displayName).trim();
-  const selectedPlatform = stringValue(input.selectedPlatform);
-  const inventoryType = stringValue(input.inventoryType);
+  const submittedPlatform = stringValue(input.selectedPlatform);
+  const submittedInventoryType = stringValue(input.inventoryType);
+  const rawOptionError = validateRawOnboardingOptionKeys(input.optionKeys);
+  const submittedOptionKeys = normalizeOptionKeys(input.optionKeys);
   const placementFeeKrw = parsePlacementFeeKrw(input.placementFeeManwon);
   const productionFeeKrwInput = parseProductionFeeKrw(
     input.productionFeeManwon,
@@ -280,29 +310,44 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
   const turnaroundDays = parseRequiredNonNegativeInteger(input.turnaroundDays);
   const maintenanceDays = parseRequiredPositiveInteger(input.maintenanceDays);
   const mentionSeconds = parseRequiredNonNegativeInteger(input.mentionSeconds);
-  const storyCount = parseRequiredNonNegativeInteger(input.storyCount);
+
+  if (!isOnboardingAdSlot(adSlotValue)) {
+    errors.adSlot = "열어둘 광고 자리를 선택해주세요.";
+  }
+
+  const selection = isOnboardingAdSlot(adSlotValue)
+    ? deriveSelectionFromSubmittedOptions(adSlotValue, submittedOptionKeys)
+    : null;
+
+  if (selection?.error) {
+    errors.optionKeys = selection.error;
+  }
+
+  if (rawOptionError) {
+    errors.optionKeys = rawOptionError;
+  }
+
+  if (
+    selection &&
+    (submittedPlatform !== selection.platform ||
+      submittedInventoryType !== selection.inventoryType)
+  ) {
+    errors.adSlot = "선택한 광고 자리 정보가 올바르지 않습니다.";
+  }
 
   if (!displayName) {
     errors.displayName = "활동명을 입력해주세요.";
   }
 
-  if (!isOnboardingPlatform(selectedPlatform)) {
-    errors.selectedPlatform = "첫 광고 상품을 등록할 채널을 선택해주세요.";
-  }
-
-  if (!isOnboardingInventoryType(inventoryType)) {
-    errors.inventoryType = "광고 방식을 선택해주세요.";
-  }
-
-  const channelProfiles = validateChannelProfiles(input, errors);
-
-  if (Object.keys(channelProfiles).length === 0) {
-    errors.selectedPlatform =
-      errors.selectedPlatform ?? "YouTube 또는 Instagram 채널을 하나 이상 입력해주세요.";
-  }
+  const selectedPlatform = selection?.platform ?? null;
+  const inventoryType = selection?.inventoryType ?? null;
+  const optionKeys = selection?.optionKeys ?? [];
+  const channelProfiles = selectedPlatform
+    ? validateSelectedChannelProfile(input, selectedPlatform, errors)
+    : {};
 
   if (
-    isOnboardingPlatform(selectedPlatform) &&
+    selectedPlatform &&
     !channelProfiles[toChannelKey(selectedPlatform)]
   ) {
     errors.selectedPlatform = `${selectedPlatform} 채널 정보를 완성해주세요.`;
@@ -310,13 +355,10 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
 
   if (placementFeeKrw === null) {
     errors.placementFeeManwon =
-      "광고 자리값은 0.5만원부터 99만원까지 0.5만원 단위로 입력해주세요.";
+      "희망 가격은 0.5만원부터 99만원까지 0.5만원 단위로 입력해주세요.";
   }
 
-  if (
-    isOnboardingInventoryType(inventoryType) &&
-    inventoryType === "new_content"
-  ) {
+  if (inventoryType === "new_content") {
     if (productionFeeKrwInput === null) {
       errors.productionFeeManwon =
         "제작비는 0원부터 99만원까지 0.5만원 단위로 입력해주세요.";
@@ -328,7 +370,6 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
   }
 
   if (
-    isOnboardingInventoryType(inventoryType) &&
     inventoryType === "existing_traffic" &&
     !isValidMaintenanceDays(maintenanceDays)
   ) {
@@ -336,55 +377,19 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
   }
 
   if (
-    isOnboardingPlatform(selectedPlatform) &&
-    isOnboardingInventoryType(inventoryType) &&
-    selectedPlatform === "YouTube" &&
-    inventoryType === "new_content" &&
+    adSlotValue === "youtube_video_mention" &&
     !isOnboardingMentionSeconds(mentionSeconds)
   ) {
-    errors.mentionSeconds = "직접 소개 시간을 선택해주세요.";
-  }
-
-  const selectedOptionKeys = normalizeOptionKeys(input.optionKeys);
-  const optionError =
-    validateRawOnboardingOptionKeys(input.optionKeys) ??
-    (isOnboardingPlatform(selectedPlatform) &&
-    isOnboardingInventoryType(inventoryType)
-      ? validateOnboardingOptions({
-          platform: selectedPlatform,
-          inventoryType,
-          optionKeys: selectedOptionKeys,
-        })
-      : null);
-
-  if (optionError) {
-    errors.optionKeys = optionError;
-  }
-
-  if (
-    isOnboardingPlatform(selectedPlatform) &&
-    isOnboardingInventoryType(inventoryType) &&
-    selectedPlatform === "Instagram" &&
-    inventoryType === "new_content" &&
-    selectedOptionKeys.includes("story_3") &&
-    !isOnboardingStoryCount(storyCount)
-  ) {
-    errors.storyCount = "추가할 스토리 수를 선택해주세요.";
-  }
-
-  if (
-    isOnboardingPlatform(selectedPlatform) &&
-    isOnboardingInventoryType(inventoryType) &&
-    inventoryType === "existing_traffic" &&
-    selectedOptionKeys.length === 0
-  ) {
-    errors.optionKeys = "기존 콘텐츠나 계정에 추가할 광고 위치를 하나 이상 선택해주세요.";
+    errors.mentionSeconds = "소개 시간을 선택해주세요.";
   }
 
   if (
     Object.keys(errors).length > 0 ||
-    !isOnboardingPlatform(selectedPlatform) ||
-    !isOnboardingInventoryType(inventoryType) ||
+    !isOnboardingAdSlot(adSlotValue) ||
+    !selection ||
+    selection.error ||
+    !selectedPlatform ||
+    !inventoryType ||
     placementFeeKrw === null
   ) {
     return { ok: false as const, errors };
@@ -396,12 +401,13 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
   return {
     ok: true as const,
     data: {
+      adSlot: adSlotValue,
       displayName,
       bio: nullableStringValue(input.bio),
       selectedPlatform,
       channelProfiles,
       inventoryType,
-      optionKeys: selectedOptionKeys,
+      optionKeys,
       placementFeeKrw,
       productionFeeKrw,
       turnaroundDays:
@@ -414,54 +420,31 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
           ? maintenanceDays
           : null,
       mentionSeconds:
-        selectedPlatform === "YouTube" &&
-        inventoryType === "new_content" &&
+        adSlotValue === "youtube_video_mention" &&
         isOnboardingMentionSeconds(mentionSeconds)
           ? mentionSeconds
           : null,
-      storyCount:
-        selectedPlatform === "Instagram" &&
-        inventoryType === "new_content" &&
-        selectedOptionKeys.includes("story_3") &&
-        isOnboardingStoryCount(storyCount)
-          ? storyCount
-          : null,
+      storyCount: null,
     } satisfies CreatorOnboardingInput,
   };
 }
 
-export function validateOnboardingOptions(input: {
-  platform: OnboardingPlatform;
-  inventoryType: OnboardingInventoryType;
-  optionKeys: OnboardingOptionKey[];
-}) {
-  const allowed = new Set(getAllowedOnboardingOptions(input));
-
-  for (const optionKey of input.optionKeys) {
-    if (!allowed.has(optionKey)) {
-      return "선택한 광고 방식에서 사용할 수 없는 옵션이 포함되어 있습니다.";
-    }
-  }
-
-  return null;
-}
-
 export function getOnboardingErrorStep(errors: CreatorOnboardingErrors) {
   const step1Fields: Array<keyof CreatorOnboardingErrors> = [
+    "adSlot",
+    "inventoryType",
+    "optionKeys",
+    "mentionSeconds",
+  ];
+  const step2Fields: Array<keyof CreatorOnboardingErrors> = [
     "displayName",
+    "selectedPlatform",
     "youtubeName",
     "youtubeUrl",
     "youtubeAudienceSize",
     "instagramName",
     "instagramUrl",
     "instagramAudienceSize",
-  ];
-  const step2Fields: Array<keyof CreatorOnboardingErrors> = [
-    "selectedPlatform",
-    "inventoryType",
-    "optionKeys",
-    "mentionSeconds",
-    "storyCount",
   ];
 
   if (step1Fields.some((field) => errors[field])) {
@@ -509,10 +492,6 @@ export function buildCreatorOnboardingListingPayload(params: {
   listingSlug: string;
   imagePaths: string[];
 }): CreatorOnboardingListingPayload {
-  const template = getOnboardingTemplate(
-    params.input.selectedPlatform,
-    params.input.inventoryType,
-  );
   const selectedChannel =
     params.input.channelProfiles[toChannelKey(params.input.selectedPlatform)];
 
@@ -520,23 +499,20 @@ export function buildCreatorOnboardingListingPayload(params: {
     throw new Error("Selected onboarding channel is missing.");
   }
 
-  const deliverables = buildDeliverables({
-    input: params.input,
-    template,
-  });
+  const presentation = getOnboardingSlotPresentation(params.input);
 
   return {
     id: params.listingId,
     creator_id: params.creatorId,
     slug: params.listingSlug,
-    title: template.heading,
+    title: presentation.title,
     platform: params.input.selectedPlatform,
     channel_name: selectedChannel.name,
     channel_url: selectedChannel.url,
     audience_size: selectedChannel.audienceSize,
-    ad_format: template.heading,
-    description: template.description,
-    deliverables,
+    ad_format: presentation.adFormat,
+    description: presentation.description,
+    deliverables: presentation.deliverables,
     price_krw: calculateOnboardingTotalPrice(params.input),
     image_paths: params.imagePaths,
     status: "draft",
@@ -551,8 +527,73 @@ export function buildCreatorOnboardingListingPayload(params: {
     recent_30d_views: null,
     maintenance_days: params.input.maintenanceDays,
     mention_seconds: params.input.mentionSeconds,
-    story_count: params.input.storyCount,
+    story_count: null,
   };
+}
+
+export function getOnboardingSlotPresentation(input: Pick<
+  CreatorOnboardingInput,
+  "adSlot" | "mentionSeconds" | "optionKeys" | "maintenanceDays" | "turnaroundDays"
+>) {
+  if (input.adSlot === "youtube_video_mention") {
+    const seconds = input.mentionSeconds ?? 15;
+    return {
+      title: `YouTube 영상 속 ${seconds}초 소개`,
+      adFormat: `${seconds}초 직접 소개`,
+      description: "새 YouTube 영상 안에서 매장, 상품 또는 서비스를 짧게 소개하는 광고 자리입니다.",
+      deliverables: [
+        `영상 안에서 약 ${seconds}초 직접 소개`,
+        input.turnaroundDays ? `${input.turnaroundDays}일 이내 제작` : "새 영상 제작",
+      ],
+    };
+  }
+
+  if (input.adSlot === "youtube_pinned_comment") {
+    return existingSlotPresentation({
+      title: "YouTube 기존 영상 고정댓글 광고",
+      adFormat: "고정댓글 광고",
+      description: "기존 YouTube 영상의 고정댓글에 광고 문구와 링크를 올리는 광고 자리입니다.",
+      deliverable: "기존 영상 고정댓글에 광고 문구와 링크 게시",
+      maintenanceDays: input.maintenanceDays,
+    });
+  }
+
+  if (input.adSlot === "youtube_description_top") {
+    return existingSlotPresentation({
+      title: "YouTube 기존 영상 설명란 상단 광고",
+      adFormat: "설명란 상단 광고",
+      description: "기존 YouTube 영상 설명란 첫 부분에 광고 문구와 링크를 올리는 광고 자리입니다.",
+      deliverable: "기존 영상 설명란 상단에 광고 문구와 링크 게시",
+      maintenanceDays: input.maintenanceDays,
+    });
+  }
+
+  if (input.adSlot === "instagram_reel_mention") {
+    return {
+      title: "Instagram 릴스 속 짧은 소개",
+      adFormat: "릴스 속 직접 소개",
+      description: "새 Instagram 릴스 안에서 매장 방문이나 상품 사용 모습을 소개하는 광고 자리입니다.",
+      deliverables: [
+        "릴스 안에서 매장 방문 또는 상품 사용 소개",
+        input.turnaroundDays ? `${input.turnaroundDays}일 이내 제작` : "새 릴스 제작",
+      ],
+    };
+  }
+
+  const isHighlight = input.optionKeys.includes("highlight");
+  return existingSlotPresentation({
+    title: isHighlight
+      ? "Instagram 스토리 하이라이트 광고"
+      : "Instagram 프로필 링크 광고",
+    adFormat: isHighlight ? "스토리 하이라이트 광고" : "프로필 링크 광고",
+    description: isHighlight
+      ? "Instagram 스토리 하이라이트에 광고를 노출하는 자리입니다."
+      : "Instagram 프로필 링크에 광고주 링크를 노출하는 자리입니다.",
+    deliverable: isHighlight
+      ? "스토리 하이라이트에 광고 노출"
+      : "프로필에 광고주 링크 노출",
+    maintenanceDays: input.maintenanceDays,
+  });
 }
 
 export function calculateOnboardingTotalPrice(input: {
@@ -606,42 +647,86 @@ export function isOnboardingOptionKey(
   return onboardingOptionKeys.includes(value as OnboardingOptionKey);
 }
 
+export function isOnboardingAdSlot(value: string): value is OnboardingAdSlot {
+  return onboardingAdSlots.includes(value as OnboardingAdSlot);
+}
+
 export function toChannelKey(platform: OnboardingPlatform) {
   return platform === "YouTube" ? "youtube" : "instagram";
 }
 
-function validateChannelProfiles(
+function deriveSelectionFromSubmittedOptions(
+  adSlot: OnboardingAdSlot,
+  optionKeys: OnboardingOptionKey[],
+) {
+  const definition = getOnboardingAdSlotDefinition(adSlot);
+  let expectedOptions: OnboardingOptionKey[] = [];
+
+  if (adSlot === "youtube_pinned_comment") {
+    expectedOptions = ["pinned_comment"];
+  } else if (adSlot === "youtube_description_top") {
+    expectedOptions = ["description_top"];
+  } else if (adSlot === "instagram_profile_or_highlight") {
+    const placements = optionKeys.filter(
+      (key): key is InstagramExistingPlacement =>
+        key === "profile_link" || key === "highlight",
+    );
+    if (placements.length !== 1 || optionKeys.length !== 1) {
+      return {
+        platform: definition.platform,
+        inventoryType: definition.inventoryType,
+        optionKeys: [],
+        error: "프로필 링크 또는 스토리 하이라이트 중 하나를 선택해주세요.",
+      };
+    }
+    expectedOptions = placements;
+  }
+
+  if (
+    adSlot !== "instagram_profile_or_highlight" &&
+    (optionKeys.length !== expectedOptions.length ||
+      optionKeys.some((key, index) => key !== expectedOptions[index]))
+  ) {
+    return {
+      platform: definition.platform,
+      inventoryType: definition.inventoryType,
+      optionKeys: [],
+      error: "선택한 광고 자리에 맞지 않는 옵션이 포함되어 있습니다.",
+    };
+  }
+
+  return {
+    platform: definition.platform,
+    inventoryType: definition.inventoryType,
+    optionKeys: expectedOptions,
+    error: null,
+  };
+}
+
+function validateSelectedChannelProfile(
   input: Record<string, unknown>,
+  platform: OnboardingPlatform,
   errors: CreatorOnboardingErrors,
 ) {
   const channelProfiles: OnboardingChannelProfiles = {};
-  const youtube = parseChannelProfile({
-    platform: "YouTube",
-    name: input.youtubeName,
-    url: input.youtubeUrl,
-    audienceSize: input.youtubeAudienceSize,
-    nameField: "youtubeName",
-    urlField: "youtubeUrl",
-    audienceField: "youtubeAudienceSize",
-    errors,
-  });
-  const instagram = parseChannelProfile({
-    platform: "Instagram",
-    name: input.instagramName,
-    url: input.instagramUrl,
-    audienceSize: input.instagramAudienceSize,
-    nameField: "instagramName",
-    urlField: "instagramUrl",
-    audienceField: "instagramAudienceSize",
+  const isYoutube = platform === "YouTube";
+  const profile = parseChannelProfile({
+    platform,
+    name: input[isYoutube ? "youtubeName" : "instagramName"],
+    url: input[isYoutube ? "youtubeUrl" : "instagramUrl"],
+    audienceSize: input[
+      isYoutube ? "youtubeAudienceSize" : "instagramAudienceSize"
+    ],
+    nameField: isYoutube ? "youtubeName" : "instagramName",
+    urlField: isYoutube ? "youtubeUrl" : "instagramUrl",
+    audienceField: isYoutube
+      ? "youtubeAudienceSize"
+      : "instagramAudienceSize",
     errors,
   });
 
-  if (youtube) {
-    channelProfiles.youtube = youtube;
-  }
-
-  if (instagram) {
-    channelProfiles.instagram = instagram;
+  if (profile) {
+    channelProfiles[toChannelKey(platform)] = profile;
   }
 
   return channelProfiles;
@@ -660,30 +745,24 @@ function parseChannelProfile(params: {
   const name = stringValue(params.name).trim();
   const url = stringValue(params.url).trim();
   const audienceSize = stringValue(params.audienceSize).trim();
-  const anyValue = Boolean(name || url || audienceSize);
-
-  if (!anyValue) {
-    return null;
-  }
 
   if (!name) {
     params.errors[params.nameField] =
-      `${params.platform} 채널명을 입력해주세요.`;
+      params.platform === "YouTube"
+        ? "YouTube 채널명을 입력해주세요."
+        : "Instagram 계정명을 입력해주세요.";
   }
 
   if (!url) {
-    params.errors[params.urlField] =
-      `${params.platform} 채널 주소를 입력해주세요.`;
+    params.errors[params.urlField] = `${params.platform} 채널 주소를 입력해주세요.`;
   } else if (!isValidAbsoluteHttpUrl(url)) {
     params.errors[params.urlField] =
       `${params.platform} 채널 주소는 http 또는 https 전체 URL이어야 합니다.`;
   } else if (!isMatchingPlatformUrl(params.platform, url)) {
-    params.errors[params.urlField] =
-      `${params.platform} 채널 주소를 입력해주세요.`;
+    params.errors[params.urlField] = `${params.platform} 채널 주소를 입력해주세요.`;
   }
 
   const parsedAudienceSize = parseRequiredNonNegativeInteger(audienceSize);
-
   if (parsedAudienceSize === null) {
     params.errors[params.audienceField] =
       params.platform === "YouTube"
@@ -695,11 +774,7 @@ function parseChannelProfile(params: {
     return null;
   }
 
-  return {
-    name,
-    url,
-    audienceSize: parsedAudienceSize,
-  };
+  return { name, url, audienceSize: parsedAudienceSize };
 }
 
 function buildSocialLinks(channelProfiles: OnboardingChannelProfiles) {
@@ -734,37 +809,22 @@ function buildChannelProfilesJson(channelProfiles: OnboardingChannelProfiles) {
   };
 }
 
-function buildDeliverables(params: {
-  input: CreatorOnboardingInput;
-  template: OnboardingTemplate;
+function existingSlotPresentation(input: {
+  title: string;
+  adFormat: string;
+  description: string;
+  deliverable: string;
+  maintenanceDays: number | null;
 }) {
-  const deliverables = [...params.template.baseDeliverables];
-
-  if (
-    params.input.selectedPlatform === "YouTube" &&
-    params.input.inventoryType === "new_content" &&
-    params.input.mentionSeconds
-  ) {
-    deliverables[0] = `영상 안에서 약 ${params.input.mentionSeconds}초 직접 소개`;
-  }
-
-  for (const optionKey of params.input.optionKeys) {
-    if (optionKey === "story_3" && params.input.storyCount) {
-      deliverables.push(`스토리 ${params.input.storyCount}건 추가`);
-      continue;
-    }
-
-    deliverables.push(onboardingOptionLabels[optionKey]);
-  }
-
-  if (
-    params.input.inventoryType === "existing_traffic" &&
-    params.input.maintenanceDays
-  ) {
-    deliverables.push(`${params.input.maintenanceDays}일 유지`);
-  }
-
-  return deliverables;
+  return {
+    title: input.title,
+    adFormat: input.adFormat,
+    description: input.description,
+    deliverables: [
+      input.deliverable,
+      input.maintenanceDays ? `${input.maintenanceDays}일 유지` : "기간 협의",
+    ],
+  };
 }
 
 function normalizeOptionKeys(value: unknown): OnboardingOptionKey[] {
@@ -772,13 +832,11 @@ function normalizeOptionKeys(value: unknown): OnboardingOptionKey[] {
   const optionKeys: OnboardingOptionKey[] = [];
 
   for (const rawValue of rawValues) {
-    const value = stringValue(rawValue);
-
-    if (!isOnboardingOptionKey(value) || optionKeys.includes(value)) {
+    const optionKey = stringValue(rawValue);
+    if (!isOnboardingOptionKey(optionKey) || optionKeys.includes(optionKey)) {
       continue;
     }
-
-    optionKeys.push(value);
+    optionKeys.push(optionKey);
   }
 
   return optionKeys;
@@ -786,15 +844,12 @@ function normalizeOptionKeys(value: unknown): OnboardingOptionKey[] {
 
 function validateRawOnboardingOptionKeys(value: unknown) {
   const rawValues = Array.isArray(value) ? value : [value];
-
   for (const rawValue of rawValues) {
     const optionKey = stringValue(rawValue);
-
     if (optionKey && !isOnboardingOptionKey(optionKey)) {
       return "알 수 없는 옵션이 포함되어 있습니다.";
     }
   }
-
   return null;
 }
 
@@ -810,40 +865,33 @@ function isOnboardingMentionSeconds(
   return onboardingMentionSeconds.includes(value as OnboardingMentionSeconds);
 }
 
-function isOnboardingStoryCount(
-  value: number | null,
-): value is OnboardingStoryCount {
-  return onboardingStoryCounts.includes(value as OnboardingStoryCount);
-}
-
 function isValidMaintenanceDays(value: number | null) {
   return value !== null && value >= 1 && value <= 365;
 }
 
 function isMatchingPlatformUrl(platform: OnboardingPlatform, value: string) {
   const hostname = new URL(value).hostname.toLowerCase();
-
   if (platform === "YouTube") {
-    return hostname === "youtube.com" || hostname.endsWith(".youtube.com") || hostname === "youtu.be";
+    return (
+      hostname === "youtube.com" ||
+      hostname.endsWith(".youtube.com") ||
+      hostname === "youtu.be"
+    );
   }
-
   return hostname === "instagram.com" || hostname.endsWith(".instagram.com");
 }
 
 function parseRequiredPositiveInteger(value: unknown) {
   const string = stringValue(value).trim();
-
   if (!/^[1-9]\d*$/.test(string)) {
     return null;
   }
-
   const number = Number(string);
   return Number.isSafeInteger(number) ? number : null;
 }
 
 function parsePlacementFeeKrw(value: unknown) {
   const krw = parseOnboardingManwonToKrw(value);
-
   if (
     krw === null ||
     krw < minPlacementFeeKrw ||
@@ -851,27 +899,22 @@ function parsePlacementFeeKrw(value: unknown) {
   ) {
     return null;
   }
-
   return krw;
 }
 
 function parseProductionFeeKrw(value: unknown) {
   const krw = parseOnboardingManwonToKrw(value);
-
   if (krw === null || krw < 0 || krw > maxOnboardingFeeKrw) {
     return null;
   }
-
   return krw;
 }
 
 function parseRequiredNonNegativeInteger(value: unknown) {
   const string = stringValue(value).trim();
-
   if (!/^(0|[1-9]\d*)$/.test(string)) {
     return null;
   }
-
   const number = Number(string);
   return Number.isSafeInteger(number) ? number : null;
 }
