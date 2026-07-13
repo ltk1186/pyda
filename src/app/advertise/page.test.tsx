@@ -14,11 +14,13 @@ describe("AdvertisePage", () => {
     expect(html).toContain("어떤 광고를 원하시나요?");
     expect(html).toContain("견적 확인까지 비용이 없습니다.");
     expect(html).toContain("조건 확인 후 영업일 2일 안에 먼저 연락드립니다.");
-    expect(html).toContain("무엇을 광고하고 싶나요?");
-    expect(html).toContain("예상 예산");
-    expect(html).toContain("카카오톡");
-    expect(html).toContain("전화");
-    expect(html).toContain("문의 답변과 크리에이터 연결을 위한 연락처 수집");
+    expect(html).toContain("무엇을 광고하고 싶으신가요?");
+    expect(html).toContain("1 / 6");
+    expect(html).toContain("견적 문의");
+    expect(html).not.toContain("어느 정도 예산으로 먼저 알아볼까요?");
+    expect(html).not.toContain(
+      "문의 답변과 크리에이터 연결을 위한 연락처 수집",
+    );
     expect(html).toContain('name="source"');
     expect(html).toContain('value="homepage_concierge"');
   });
