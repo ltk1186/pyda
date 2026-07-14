@@ -5,6 +5,7 @@ import type {
   ListingStatus,
 } from "@/lib/admin/listing-core";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { ListingVisibilityPreference } from "@/lib/listing-visibility";
 
 export type CreatorListingSummary = {
   id: string;
@@ -16,6 +17,7 @@ export type CreatorListingSummary = {
   imagePaths: string[];
   status: ListingStatus;
   createdAt: string;
+  visibilityPreference: ListingVisibilityPreference;
 };
 
 export type CreatorListingDetail = CreatorListingSummary & {
@@ -45,6 +47,7 @@ type CreatorListingRow = {
   status: ListingStatus;
   published_at: string | null;
   created_at: string;
+  visibility_preference: ListingVisibilityPreference;
 };
 
 const creatorListingSelect = `
@@ -63,7 +66,8 @@ const creatorListingSelect = `
   image_paths,
   status,
   published_at,
-  created_at
+  created_at,
+  visibility_preference
 `;
 
 export async function getCreatorListings(creatorId: string) {
@@ -111,6 +115,7 @@ function mapListing(row: CreatorListingRow): CreatorListingSummary {
     imagePaths: row.image_paths ?? [],
     status: row.status,
     createdAt: row.created_at,
+    visibilityPreference: row.visibility_preference,
   };
 }
 

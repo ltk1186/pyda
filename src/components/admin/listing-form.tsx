@@ -12,6 +12,7 @@ import {
 import type { AdminListingCreatorOption } from "@/lib/admin/listings";
 import type { AdminListingFormState } from "@/app/admin/listings/actions";
 import { ListingImageInput } from "./listing-image-input";
+import type { ListingVisibilityPreference } from "@/lib/listing-visibility";
 
 type AdminListingFormProps = {
   action: (
@@ -35,6 +36,7 @@ type AdminListingFormProps = {
     imagePaths: string[];
     status: ListingStatus;
     isSample: boolean;
+    visibilityPreference: ListingVisibilityPreference;
   };
   submitLabel: string;
 };
@@ -55,6 +57,23 @@ export function AdminListingForm({
       <section className="rounded-lg border border-neutral-200 bg-white p-5">
         <h2 className="text-base font-semibold">기본 정보</h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label className="text-sm font-medium text-neutral-950" htmlFor="visibilityPreference">
+              크리에이터 공개 의사
+            </label>
+            <select
+              className="mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-950"
+              defaultValue={listing?.visibilityPreference ?? "private_matching"}
+              id="visibilityPreference"
+              name="visibilityPreference"
+            >
+              <option value="private_matching">직접 매칭</option>
+              <option value="public_review">메인 공개 신청</option>
+            </select>
+            <p className="mt-1 text-xs text-neutral-500">
+              메인 공개 신청이 기록된 광고 자리만 공개할 수 있습니다.
+            </p>
+          </div>
           <div>
             <label className="text-sm font-medium text-neutral-950" htmlFor="creatorId">
               크리에이터

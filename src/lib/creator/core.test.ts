@@ -3,6 +3,7 @@ import {
   buildAvatarStorageObjectPath,
   buildCreatorListingInsertPayload,
   buildCreatorListingUpdatePayload,
+  buildGeneratedManagedListingSlug,
   buildCreatorProfileUpdatePayload,
   buildOnboardingCompletePayload,
   canCreatorSelfManage,
@@ -50,7 +51,6 @@ describe("creator profile self-management", () => {
   it("builds profile update payload without protected fields or status", () => {
     const result = validateCreatorProfileForm({
       displayName: "김제주",
-      slug: "kim-jeju",
       bio: "제주 여행 크리에이터",
       youtube: "https://youtube.com/@jeju",
       instagram: "",
@@ -69,7 +69,6 @@ describe("creator profile self-management", () => {
     const payload = buildCreatorProfileUpdatePayload(result.data);
 
     expect(payload).toEqual({
-      slug: "kim-jeju",
       display_name: "김제주",
       bio: "제주 여행 크리에이터",
       social_links: {
@@ -81,10 +80,10 @@ describe("creator profile self-management", () => {
     expect("onboarded_at" in payload).toBe(false);
   });
 
-  it("keeps slug and social URL validation", () => {
+  it("does not accept slug in the profile payload and keeps social URL validation", () => {
     const result = validateCreatorProfileForm({
       displayName: "김제주",
-      slug: "Bad Slug",
+      slug: "attacker-controlled-slug",
       youtube: "javascript:alert(1)",
       instagram: "/relative",
       blog: "not-url",
@@ -93,12 +92,16 @@ describe("creator profile self-management", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors.slug).toBeTruthy();
       expect(result.errors.youtube).toBeTruthy();
       expect(result.errors.instagram).toBeTruthy();
       expect(result.errors.blog).toBeTruthy();
       expect(result.errors.tiktok).toBeTruthy();
     }
+    expect("slug" in buildCreatorProfileUpdatePayload({
+      displayName: "김제주",
+      bio: null,
+      socialLinks: {},
+    })).toBe(false);
   });
 });
 
@@ -115,6 +118,7 @@ describe("creator listing self-management", () => {
     deliverables: ["브랜드 소개"],
     priceKrw: 500000,
     status: "published" as const,
+    visibilityPreference: "public_review" as const,
   };
 
   it("validates creator listing fields through shared listing rules", () => {
@@ -147,6 +151,14 @@ describe("creator listing self-management", () => {
     expect(payload.is_sample).toBe(false);
   });
 
+  it("builds an internal listing slug without a trailing hyphen", () => {
+    const slug = buildGeneratedManagedListingSlug(
+      "89c1f6e0-1582-4bf3-9a2f-0123456789ab",
+    );
+    expect(slug).toMatch(/^listing-[a-z0-9]+$/);
+    expect(slug.endsWith("-")).toBe(false);
+  });
+
   it("does not allow creator_id or is_sample in creator listing update payload", () => {
     const payload = buildCreatorListingUpdatePayload({
       input,
@@ -173,21 +185,21 @@ describe("creator listing self-management", () => {
     expect(canCreatorSelfManage("published")).toBe(true);
   });
 
-  it("blocks draft submitted creators from self-publishing listings", () => {
+  it("blocks every creator from self-publishing listings", () => {
     expect(
       creatorListingPublishBlockedMessage({
         creatorStatus: "draft",
         creatorOnboardedAt: "2026-07-07T00:00:00.000Z",
         nextListingStatus: "published",
       }),
-    ).toBe("등록 검토 중인 크리에이터는 광고 상품을 직접 공개할 수 없습니다.");
+    ).toBe("메인 공개는 크리에이터의 공개 신청 후 Pyda가 확인하여 진행합니다.");
     expect(
       creatorListingPublishBlockedMessage({
         creatorStatus: "draft",
         creatorOnboardedAt: null,
         nextListingStatus: "published",
       }),
-    ).toBeNull();
+    ).toBe("메인 공개는 크리에이터의 공개 신청 후 Pyda가 확인하여 진행합니다.");
   });
 });
 

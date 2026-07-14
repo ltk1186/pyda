@@ -129,7 +129,7 @@ export async function uploadAvatarImage(params: {
   if (error) {
     return {
       ok: false as const,
-      message: "아바타 이미지를 업로드하지 못했습니다.",
+      message: "프로필 사진을 업로드하지 못했습니다.",
     };
   }
 

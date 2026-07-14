@@ -38,6 +38,7 @@ import {
   writeCreatorOnboardingDraft,
   type CreatorOnboardingDraft,
 } from "@/lib/creator/onboarding-draft";
+import type { ListingVisibilityPreference } from "@/lib/listing-visibility";
 
 type CreatorOnboardingFormProps = {
   action: (
@@ -77,6 +78,8 @@ export function CreatorOnboardingForm({
     useState(false);
   const [turnaroundDays, setTurnaroundDays] = useState("14");
   const [maintenanceDays, setMaintenanceDays] = useState("14");
+  const [visibilityPreference, setVisibilityPreference] =
+    useState<ListingVisibilityPreference>("private_matching");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageMessage, setImageMessage] = useState<string | null>(null);
   const [clientErrors, setClientErrors] =
@@ -152,6 +155,7 @@ export function CreatorOnboardingForm({
       setHasSeparateProductionFee(draft.hasSeparateProductionFee);
       setTurnaroundDays(draft.turnaroundDays);
       setMaintenanceDays(draft.maintenanceDays);
+      setVisibilityPreference(draft.visibilityPreference);
       setStep(3);
       setRestoredDraft(true);
     }, 0);
@@ -246,6 +250,7 @@ export function CreatorOnboardingForm({
       maintenanceDays,
       mentionSeconds,
       storyCount: "",
+      visibilityPreference,
     };
   }
 
@@ -277,6 +282,7 @@ export function CreatorOnboardingForm({
       turnaroundDays,
       maintenanceDays,
       mentionSeconds,
+      visibilityPreference,
     };
   }
 
@@ -399,6 +405,11 @@ export function CreatorOnboardingForm({
       <input name="bio" type="hidden" value={bio} />
       <input name="selectedPlatform" type="hidden" value={selectedPlatform} />
       <input name="inventoryType" type="hidden" value={inventoryType} />
+      <input
+        name="visibilityPreference"
+        type="hidden"
+        value={visibilityPreference}
+      />
       {optionKeys.map((optionKey) => (
         <input key={optionKey} name="optionKeys" type="hidden" value={optionKey} />
       ))}
@@ -689,6 +700,27 @@ export function CreatorOnboardingForm({
               </div>
             )}
 
+            <fieldset>
+              <legend className="text-sm font-semibold text-neutral-950">
+                이 광고 자리를 어떻게 운영할까요?
+              </legend>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <VisibilityChoice
+                  checked={visibilityPreference === "private_matching"}
+                  description="메인에는 바로 공개하지 않습니다. 조건에 맞는 광고주가 있으면 Pyda가 먼저 연락드립니다."
+                  label="Pyda가 광고주를 직접 찾아주세요"
+                  onChange={() => setVisibilityPreference("private_matching")}
+                />
+                <VisibilityChoice
+                  checked={visibilityPreference === "public_review"}
+                  description="내용을 확인한 뒤 메인에 공개합니다. 광고주가 직접 보고 문의할 수 있습니다."
+                  label="메인에도 공개하고 싶어요"
+                  onChange={() => setVisibilityPreference("public_review")}
+                />
+              </div>
+              <FieldError message={errors?.visibilityPreference} />
+            </fieldset>
+
             <OnboardingPreview
               adSlot={adSlot}
               channelName={selectedChannelName}
@@ -699,6 +731,7 @@ export function CreatorOnboardingForm({
               productionFeeKrw={manwonToKrw(effectiveProductionFee)}
               totalPrice={totalPrice}
               turnaroundDays={turnaroundDays}
+              visibilityPreference={visibilityPreference}
             />
           </div>
         ) : null}
@@ -913,6 +946,36 @@ function ToggleChoice({ checked, label, onChange }: { checked: boolean; label: s
   );
 }
 
+function VisibilityChoice({
+  checked,
+  description,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  description: string;
+  label: string;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      aria-pressed={checked}
+      className={`min-h-28 rounded-2xl border p-4 text-left transition ${
+        checked
+          ? "border-[var(--brand-primary)] bg-[var(--brand-soft)]"
+          : "border-neutral-200 bg-white hover:border-neutral-300"
+      }`}
+      onClick={onChange}
+      type="button"
+    >
+      <span className="block text-sm font-semibold text-neutral-950">{label}</span>
+      <span className="mt-2 block text-xs leading-5 text-neutral-600">
+        {description}
+      </span>
+    </button>
+  );
+}
+
 function PriceChoice({
   error,
   options,
@@ -1061,7 +1124,7 @@ function ImageField({ error, fileInputRef, onChange, onClear, previewUrl }: { er
   );
 }
 
-function OnboardingPreview({ adSlot, channelName, maintenanceDays, mentionSeconds, optionKeys, placementFeeKrw, productionFeeKrw, totalPrice, turnaroundDays }: { adSlot: OnboardingAdSlot; channelName: string; maintenanceDays: string; mentionSeconds: string; optionKeys: OnboardingOptionKey[]; placementFeeKrw: number; productionFeeKrw: number; totalPrice: number; turnaroundDays: string }) {
+function OnboardingPreview({ adSlot, channelName, maintenanceDays, mentionSeconds, optionKeys, placementFeeKrw, productionFeeKrw, totalPrice, turnaroundDays, visibilityPreference }: { adSlot: OnboardingAdSlot; channelName: string; maintenanceDays: string; mentionSeconds: string; optionKeys: OnboardingOptionKey[]; placementFeeKrw: number; productionFeeKrw: number; totalPrice: number; turnaroundDays: string; visibilityPreference: ListingVisibilityPreference }) {
   const definition = getOnboardingAdSlotDefinition(adSlot);
   const presentation = getOnboardingSlotPresentation({
     adSlot,
@@ -1081,6 +1144,10 @@ function OnboardingPreview({ adSlot, channelName, maintenanceDays, mentionSecond
         <PreviewItem label="희망 가격" value={formatKrw(placementFeeKrw)} />
         {productionFeeKrw > 0 ? <PreviewItem label="제작비" value={formatKrw(productionFeeKrw)} /> : null}
         <PreviewItem label="예상 총액" value={formatKrw(totalPrice)} />
+        <PreviewItem
+          label="운영 방식"
+          value={visibilityPreference === "public_review" ? "검토 후 메인 공개" : "Pyda 직접 매칭"}
+        />
       </dl>
     </section>
   );

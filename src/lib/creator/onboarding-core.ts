@@ -1,4 +1,8 @@
 import { isValidAbsoluteHttpUrl } from "@/lib/admin/url";
+import {
+  isListingVisibilityPreference,
+  type ListingVisibilityPreference,
+} from "@/lib/listing-visibility";
 
 export const onboardingPlatforms = ["YouTube", "Instagram"] as const;
 export const onboardingInventoryTypes = [
@@ -71,6 +75,7 @@ export type CreatorOnboardingInput = {
   maintenanceDays: number | null;
   mentionSeconds: OnboardingMentionSeconds | null;
   storyCount: OnboardingStoryCount | null;
+  visibilityPreference: ListingVisibilityPreference;
 };
 
 export type CreatorOnboardingErrors = Partial<
@@ -92,7 +97,8 @@ export type CreatorOnboardingErrors = Partial<
     | "maintenanceDays"
     | "mentionSeconds"
     | "storyCount"
-    | "image",
+    | "image"
+    | "visibilityPreference",
     string
   >
 >;
@@ -124,6 +130,7 @@ export type CreatorOnboardingListingPayload = {
   maintenance_days: number | null;
   mention_seconds: OnboardingMentionSeconds | null;
   story_count: OnboardingStoryCount | null;
+  visibility_preference: ListingVisibilityPreference;
 };
 
 export type CreatorOnboardingCreatorPayload = {
@@ -310,6 +317,7 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
   const turnaroundDays = parseRequiredNonNegativeInteger(input.turnaroundDays);
   const maintenanceDays = parseRequiredPositiveInteger(input.maintenanceDays);
   const mentionSeconds = parseRequiredNonNegativeInteger(input.mentionSeconds);
+  const visibilityPreferenceValue = stringValue(input.visibilityPreference);
 
   if (!isOnboardingAdSlot(adSlotValue)) {
     errors.adSlot = "열어둘 광고 자리를 선택해주세요.";
@@ -333,6 +341,10 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
       submittedInventoryType !== selection.inventoryType)
   ) {
     errors.adSlot = "선택한 광고 자리 정보가 올바르지 않습니다.";
+  }
+
+  if (!isListingVisibilityPreference(visibilityPreferenceValue)) {
+    errors.visibilityPreference = "광고 자리 운영 방식을 선택해주세요.";
   }
 
   if (!displayName) {
@@ -390,7 +402,8 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
     selection.error ||
     !selectedPlatform ||
     !inventoryType ||
-    placementFeeKrw === null
+    placementFeeKrw === null ||
+    !isListingVisibilityPreference(visibilityPreferenceValue)
   ) {
     return { ok: false as const, errors };
   }
@@ -425,6 +438,7 @@ export function validateCreatorOnboardingInput(input: Record<string, unknown>) {
           ? mentionSeconds
           : null,
       storyCount: null,
+      visibilityPreference: visibilityPreferenceValue,
     } satisfies CreatorOnboardingInput,
   };
 }
@@ -528,6 +542,7 @@ export function buildCreatorOnboardingListingPayload(params: {
     maintenance_days: params.input.maintenanceDays,
     mention_seconds: params.input.mentionSeconds,
     story_count: null,
+    visibility_preference: params.input.visibilityPreference,
   };
 }
 
@@ -929,9 +944,9 @@ function stringValue(value: unknown) {
 }
 
 function normalizeRandomSuffix(randomId: string) {
-  return randomId
+  const compact = randomId
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/[^a-z0-9]/g, "")
     .slice(0, 24);
+  return compact || "generated";
 }

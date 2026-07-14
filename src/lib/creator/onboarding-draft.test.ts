@@ -34,6 +34,7 @@ const validDraft: CreatorOnboardingDraft = {
   turnaroundDays: "14",
   maintenanceDays: "14",
   mentionSeconds: "30",
+  visibilityPreference: "public_review",
 };
 
 describe("creator onboarding browser draft", () => {
@@ -62,6 +63,7 @@ describe("creator onboarding browser draft", () => {
       placementFeeTouched: true,
       productionFeeTouched: true,
       step: 3,
+      visibilityPreference: "public_review",
     });
   });
 

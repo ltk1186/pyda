@@ -34,6 +34,10 @@ export default async function CreatorStartPage() {
           영상 전체를 광고로 만들 필요는 없습니다. 영상 속 짧은 소개,
           고정댓글, 프로필 링크처럼 콘텐츠 안의 작은 자리를 열어보세요.
         </p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-500">
+          현재 초기 운영 기간에는 Pyda가 광고주를 직접 찾아 연결합니다.
+          원하면 검토 후 메인에도 공개할 수 있습니다.
+        </p>
 
         <div className="mt-9 grid gap-3 sm:grid-cols-3">
           <SlotExample label="영상 속 30초" type="timeline" />

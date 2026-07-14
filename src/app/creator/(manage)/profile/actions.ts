@@ -38,7 +38,6 @@ export async function updateCreatorProfile(
 
   const parsed = validateCreatorProfileForm({
     displayName: stringValue(formData.get("displayName")),
-    slug: stringValue(formData.get("slug")),
     bio: nullableStringValue(formData.get("bio")),
     youtube: nullableStringValue(formData.get("youtube")),
     instagram: nullableStringValue(formData.get("instagram")),
@@ -83,9 +82,7 @@ export async function updateCreatorProfile(
     }
 
     return {
-      message: error && isDuplicateSlugError(error)
-        ? "이미 사용 중인 slug입니다."
-        : "프로필을 저장하지 못했습니다.",
+      message: "프로필을 저장하지 못했습니다.",
     };
   }
 
@@ -98,19 +95,16 @@ export async function updateCreatorProfile(
     await cleanupStorageObjects([previousAvatarToCleanup]);
   }
 
-  revalidateCreatorPaths(creator.slug, parsed.data.slug);
+  revalidateCreatorPaths(creator.slug);
   return { ok: true, message: "프로필을 저장했습니다." };
 }
 
-function revalidateCreatorPaths(previousSlug: string, nextSlug: string) {
+function revalidateCreatorPaths(slug: string) {
   revalidatePath("/");
   revalidatePath("/creator");
   revalidatePath("/creator/profile");
 
-  if (previousSlug !== nextSlug) {
-    revalidatePath(`/creators/${previousSlug}`);
-    revalidatePath(`/creators/${nextSlug}`);
-  }
+  revalidatePath(`/creators/${slug}`);
 }
 
 function getAvatarFile(formData: FormData) {
@@ -118,10 +112,6 @@ function getAvatarFile(formData: FormData) {
   return value instanceof File && value.size > 0 && value.name.length > 0
     ? value
     : null;
-}
-
-function isDuplicateSlugError(error: { code?: string; message?: string }) {
-  return error.code === "23505" || error.message?.includes("creators_slug_key");
 }
 
 function stringValue(value: FormDataEntryValue | null) {

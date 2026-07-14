@@ -3,12 +3,11 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
-  formatListingStatus,
   listingPlatforms,
-  listingStatuses,
   type ListingPlatform,
   type ListingStatus,
 } from "@/lib/admin/listing-core";
+import type { ListingVisibilityPreference } from "@/lib/listing-visibility";
 import type { CreatorListingFormState } from "@/app/creator/(manage)/listings/actions";
 import { ListingImageInput } from "@/components/admin/listing-image-input";
 
@@ -30,6 +29,7 @@ type CreatorListingFormProps = {
     priceKrw: number;
     imagePaths: string[];
     status: ListingStatus;
+    visibilityPreference: ListingVisibilityPreference;
   };
   submitLabel: string;
 };
@@ -53,13 +53,6 @@ export function CreatorListingForm({
             error={state.errors?.title}
             label="상품명"
             name="title"
-            required
-          />
-          <TextField
-            defaultValue={listing?.slug}
-            error={state.errors?.slug}
-            label="slug"
-            name="slug"
             required
           />
           <div>
@@ -152,25 +145,25 @@ export function CreatorListingForm({
       </section>
 
       <section className="rounded-lg border border-neutral-200 bg-white p-5">
-        <h2 className="text-base font-semibold">공개 상태</h2>
-        <div className="mt-5 max-w-sm">
-          <label className="text-sm font-medium text-neutral-950" htmlFor="status">
-            상태
-          </label>
-          <select
-            className="brand-focus mt-2 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none"
-            defaultValue={listing?.status ?? "draft"}
-            id="status"
-            name="status"
-          >
-            {listingStatuses.map((status) => (
-              <option key={status} value={status}>
-                {formatListingStatus(status)}
-              </option>
-            ))}
-          </select>
-          <FieldError message={state.errors?.status} />
+        <h2 className="text-base font-semibold">광고 자리 운영 방식</h2>
+        <p className="mt-2 text-sm text-neutral-600">
+          메인 공개는 신청 후 Pyda가 내용을 확인하여 진행합니다.
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <VisibilityOption
+            defaultChecked={!listing || listing.visibilityPreference === "private_matching"}
+            description="메인에는 공개하지 않고 조건에 맞는 광고주를 Pyda가 직접 찾습니다."
+            label="직접 매칭"
+            value="private_matching"
+          />
+          <VisibilityOption
+            defaultChecked={listing?.visibilityPreference === "public_review"}
+            description="내용을 확인한 뒤 메인에 공개할 수 있도록 신청합니다."
+            label="메인 공개 신청"
+            value="public_review"
+          />
         </div>
+        <FieldError message={state.errors?.status} />
       </section>
 
       {state.message ? (
@@ -184,6 +177,35 @@ export function CreatorListingForm({
 
       <SubmitButton label={submitLabel} />
     </form>
+  );
+}
+
+function VisibilityOption({
+  defaultChecked,
+  description,
+  label,
+  value,
+}: {
+  defaultChecked: boolean;
+  description: string;
+  label: string;
+  value: ListingVisibilityPreference;
+}) {
+  return (
+    <label className="cursor-pointer rounded-lg border border-neutral-200 p-4 has-[:checked]:border-[var(--brand-primary)] has-[:checked]:bg-[var(--brand-soft)]">
+      <span className="flex items-center gap-2 text-sm font-semibold">
+        <input
+          defaultChecked={defaultChecked}
+          name="visibilityPreference"
+          type="radio"
+          value={value}
+        />
+        {label}
+      </span>
+      <span className="mt-2 block text-xs leading-5 text-neutral-600">
+        {description}
+      </span>
+    </label>
   );
 }
 

@@ -5,9 +5,9 @@ import {
   getAdminListings,
   type AdminListingSampleFilter,
 } from "@/lib/admin/listings";
-import { formatListingStatus } from "@/lib/admin/listing-core";
 import { resolveImagePath } from "@/lib/images";
 import { formatKrw } from "@/lib/marketplace/format";
+import { getListingOperationState } from "@/lib/listing-visibility";
 
 type AdminListingsPageProps = {
   searchParams: Promise<{
@@ -79,7 +79,7 @@ export default async function AdminListingsPage({
                   <th className="px-4 py-3 font-medium">플랫폼</th>
                   <th className="px-4 py-3 font-medium">광고 형식</th>
                   <th className="px-4 py-3 font-medium">가격</th>
-                  <th className="px-4 py-3 font-medium">공개 상태</th>
+                  <th className="px-4 py-3 font-medium">운영 방식</th>
                   <th className="px-4 py-3 font-medium">예시</th>
                 </tr>
               </thead>
@@ -116,7 +116,10 @@ export default async function AdminListingsPage({
                     <td className="px-4 py-3">{listing.adFormat}</td>
                     <td className="px-4 py-3">{formatKrw(listing.priceKrw)}</td>
                     <td className="px-4 py-3">
-                      {formatListingStatus(listing.status)}
+                      {getListingOperationState({
+                        status: listing.status,
+                        visibilityPreference: listing.visibilityPreference,
+                      }).label}
                     </td>
                     <td className="px-4 py-3">
                       {listing.isSample ? "예" : "아니오"}

@@ -61,16 +61,16 @@ export function AvatarInput({ defaultAvatarPath, error }: AvatarInputProps) {
 
   return (
     <div>
-      <p className="text-sm font-medium text-neutral-950">아바타</p>
+      <p className="text-sm font-medium text-neutral-950">프로필 사진</p>
       <p className="mt-1 text-xs text-neutral-500">
-        한 장만 사용합니다. 업로드 전 긴 변을 약 1200px로 줄입니다.
+        JPEG, PNG, WebP 이미지를 사용할 수 있습니다.
       </p>
 
       <div className="mt-4 flex items-center gap-4">
         <div className="relative h-20 w-20 overflow-hidden rounded-full bg-neutral-100">
           {previewUrl ? (
             <Image
-              alt="크리에이터 아바타"
+              alt="크리에이터 프로필 사진"
               className="object-cover"
               fill
               src={previewUrl}
@@ -80,7 +80,7 @@ export function AvatarInput({ defaultAvatarPath, error }: AvatarInputProps) {
         </div>
         <div className="flex flex-wrap gap-2">
           <label className="cursor-pointer rounded-md border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50">
-            이미지 선택
+            사진 변경
             <input
               accept={allowedImageMimeTypes.join(",")}
               className="sr-only"
@@ -97,7 +97,7 @@ export function AvatarInput({ defaultAvatarPath, error }: AvatarInputProps) {
             onClick={removeCurrentAvatar}
             type="button"
           >
-            아바타 제거
+            사진 삭제
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { isValidCreatorSlug } from "./creator-core";
 import { isValidAbsoluteHttpUrl } from "./url";
+import type { ListingVisibilityPreference } from "@/lib/listing-visibility";
 
 export const listingPlatforms = [
   "YouTube",
@@ -43,6 +44,7 @@ export type AdminListingFormInput = {
   imagePaths: string[];
   status: ListingStatus;
   isSample: boolean;
+  visibilityPreference: ListingVisibilityPreference;
 };
 
 export type ImageOrderItem =
@@ -74,6 +76,7 @@ export type AdminListingInsertPayload = {
   status: ListingStatus;
   is_sample: boolean;
   published_at: string | null;
+  visibility_preference: ListingVisibilityPreference;
 };
 
 export type AdminListingUpdatePayload = Omit<
@@ -454,6 +457,7 @@ export function buildAdminListingInsertPayload(params: {
     status: params.input.status,
     is_sample: params.input.isSample,
     published_at: params.publishedAt,
+    visibility_preference: params.input.visibilityPreference,
   };
 }
 
@@ -477,6 +481,7 @@ export function buildAdminListingUpdatePayload(params: {
     status: params.input.status,
     is_sample: params.input.isSample,
     published_at: params.publishedAt,
+    visibility_preference: params.input.visibilityPreference,
   };
 }
 

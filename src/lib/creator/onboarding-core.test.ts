@@ -34,6 +34,7 @@ const baseInput = {
   maintenanceDays: "",
   mentionSeconds: "30",
   storyCount: "",
+  visibilityPreference: "private_matching",
 };
 
 describe("creator onboarding ad slots", () => {
@@ -100,7 +101,28 @@ describe("creator onboarding validation and payloads", () => {
     expect(result.data.mentionSeconds).toBe(30);
     expect(result.data.placementFeeKrw).toBe(100000);
     expect(result.data.productionFeeKrw).toBe(200000);
+    expect(result.data.visibilityPreference).toBe("private_matching");
     expect(calculateOnboardingTotalPrice(result.data)).toBe(300000);
+  });
+
+  it("stores a public review request without publishing", () => {
+    const result = validateCreatorOnboardingInput({
+      ...baseInput,
+      visibilityPreference: "public_review",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const listing = buildCreatorOnboardingListingPayload({
+      input: result.data,
+      creatorId: "creator-id",
+      listingId: "listing-id",
+      listingSlug: "youtube-new-content-listing",
+      imagePaths: [],
+    });
+    expect(listing.visibility_preference).toBe("public_review");
+    expect(listing.status).toBe("draft");
+    expect(listing.published_at).toBeNull();
   });
 
   it("accepts an Instagram reel and requires only Instagram channel fields", () => {
@@ -302,13 +324,29 @@ describe("creator onboarding validation and payloads", () => {
   });
 
   it("generates safe slugs without user-provided slug input", () => {
-    expect(buildGeneratedCreatorSlug("ABC-123_456")).toBe("creator-abc-123-456");
+    expect(buildGeneratedCreatorSlug("ABC-123_456")).toBe("creator-abc123456");
     expect(
       buildGeneratedListingSlug({
         platform: "Instagram",
         inventoryType: "existing_traffic",
         randomId: "LISTING_123",
       }),
-    ).toBe("instagram-existing-traffic-listing-123");
+    ).toBe("instagram-existing-traffic-listing123");
+  });
+
+  it("never produces a trailing hyphen at the generated slug length boundary", () => {
+    const creatorSlug = buildGeneratedCreatorSlug(
+      "89c1f6e0-1582-4bf3-9a2f-0123456789ab",
+    );
+    const listingSlug = buildGeneratedListingSlug({
+      platform: "YouTube",
+      inventoryType: "new_content",
+      randomId: "89c1f6e0-1582-4bf3-9a2f-0123456789ab",
+    });
+
+    expect(creatorSlug).toMatch(/^creator-[a-z0-9]+$/);
+    expect(listingSlug).toMatch(/^youtube-new-content-[a-z0-9]+$/);
+    expect(creatorSlug.endsWith("-")).toBe(false);
+    expect(listingSlug.endsWith("-")).toBe(false);
   });
 });

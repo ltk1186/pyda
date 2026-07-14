@@ -19,6 +19,11 @@ import {
 } from "@/lib/admin/listing-core";
 import { cleanupStorageObjects, uploadListingImages } from "@/lib/admin/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  canAdminPublishListing,
+  isListingVisibilityPreference,
+  type ListingVisibilityPreference,
+} from "@/lib/listing-visibility";
 
 export type AdminListingFormState = {
   errors?: AdminListingFormErrors;
@@ -33,6 +38,7 @@ type CurrentListingRow = {
   image_paths: string[] | null;
   status: ListingStatus;
   published_at: string | null;
+  visibility_preference: ListingVisibilityPreference;
 };
 
 export async function createAdminListing(
@@ -57,6 +63,15 @@ export async function createAdminListing(
 
   if (!parsed.ok) {
     return { errors: parsed.errors };
+  }
+
+  if (
+    parsed.data.status === "published" &&
+    !canAdminPublishListing(parsed.data.visibilityPreference)
+  ) {
+    return {
+      errors: { status: "크리에이터가 메인 공개를 신청하지 않은 광고 자리입니다." },
+    };
   }
 
   const supabase = createAdminClient();
@@ -163,6 +178,15 @@ export async function updateAdminListing(
     return { errors: parsed.errors };
   }
 
+  if (
+    parsed.data.status === "published" &&
+    !canAdminPublishListing(parsed.data.visibilityPreference)
+  ) {
+    return {
+      errors: { status: "크리에이터가 메인 공개를 신청하지 않은 광고 자리입니다." },
+    };
+  }
+
   const uploaded = await uploadListingImages({
     creatorId: current.creator_id,
     listingId,
@@ -244,7 +268,7 @@ async function getCurrentListing(id: string): Promise<CurrentListingRow | null> 
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("listings")
-    .select("id, creator_id, slug, image_paths, status, published_at")
+    .select("id, creator_id, slug, image_paths, status, published_at, visibility_preference")
     .eq("id", id)
     .maybeSingle();
 
@@ -256,6 +280,17 @@ async function getCurrentListing(id: string): Promise<CurrentListingRow | null> 
 }
 
 function parseListingForm(formData: FormData, imageCount: number) {
+  const visibilityPreference = stringValue(
+    formData.get("visibilityPreference"),
+  );
+
+  if (!isListingVisibilityPreference(visibilityPreference)) {
+    return {
+      ok: false as const,
+      errors: { status: "광고 자리 운영 방식을 선택해주세요." },
+    };
+  }
+
   const base = validateAdminListingBase({
     creatorId: stringValue(formData.get("creatorId")),
     title: stringValue(formData.get("title")),
@@ -281,6 +316,7 @@ function parseListingForm(formData: FormData, imageCount: number) {
       channelName: nullableStringValue(formData.get("channelName")),
       description: nullableStringValue(formData.get("description")),
       isSample: formData.get("isSample") === "on",
+      visibilityPreference,
     },
   };
 }

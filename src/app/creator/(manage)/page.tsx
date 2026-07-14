@@ -17,6 +17,13 @@ export default async function CreatorPage() {
       <h1 className="text-2xl font-semibold tracking-tight">크리에이터</h1>
       {creator ? (
         <div className="mt-6 space-y-6">
+          {!isArchived ? (
+            <p className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-soft)] px-4 py-3 text-sm leading-6 text-neutral-700">
+              현재 Pyda는 초기 운영 중입니다. 등록한 광고 자리를 바탕으로
+              Pyda가 광고주를 직접 찾고, 메인 공개를 신청한 자리는 확인 후
+              공개합니다.
+            </p>
+          ) : null}
           <section className="rounded-lg border border-neutral-200 p-6">
             <p className="text-sm font-medium text-neutral-600">
               계정 연결 완료
@@ -31,9 +38,9 @@ export default async function CreatorPage() {
               </p>
             ) : null}
             <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-3">
-              <Stat label="공개 상품" value={creator.publishedListingCount} />
-              <Stat label="숨김 상품" value={creator.hiddenListingCount} />
-              <Stat label="작성 중 상품" value={creator.draftListingCount} />
+              <Stat label="메인 공개 중" value={creator.publishedListingCount} />
+              <Stat label="노출 중지" value={creator.hiddenListingCount} />
+              <Stat label="직접 매칭·검토" value={creator.draftListingCount} />
             </dl>
             <div className="mt-6 flex flex-wrap gap-3">
               {!isArchived ? (
@@ -42,7 +49,7 @@ export default async function CreatorPage() {
                     className="brand-primary rounded-md border px-4 py-2 text-sm font-semibold transition"
                     href="/creator/listings/new"
                   >
-                    새 광고 상품 추가
+                    새 광고 자리 추가
                   </Link>
                   <Link
                     className="brand-outline rounded-md border px-4 py-2 text-sm font-semibold transition"
@@ -56,7 +63,7 @@ export default async function CreatorPage() {
                 className="brand-outline rounded-md border px-4 py-2 text-sm font-semibold transition"
                 href="/creator/listings"
               >
-                내 광고 상품
+                내 광고 자리
               </Link>
             </div>
           </section>

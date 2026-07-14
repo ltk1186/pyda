@@ -14,10 +14,10 @@ export default async function NewCreatorListingPage() {
         className="text-sm text-neutral-600 hover:text-neutral-950"
         href="/creator/listings"
       >
-        내 광고 상품
+        내 광고 자리
       </Link>
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">
-        새 광고 상품
+        새 광고 자리
       </h1>
       {creator ? (
         creator.status === "archived" ? (
@@ -26,7 +26,7 @@ export default async function NewCreatorListingPage() {
           <div className="mt-6">
             <CreatorListingForm
               action={createCreatorListing}
-              submitLabel="광고 상품 생성"
+              submitLabel="광고 자리 등록"
             />
           </div>
         )

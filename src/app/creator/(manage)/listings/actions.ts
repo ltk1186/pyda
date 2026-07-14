@@ -5,17 +5,17 @@ import { redirect } from "next/navigation";
 import {
   assertExistingImageSubset,
   buildOrderedImagePaths,
-  nextPublishedAt,
   validateImageCount,
   validateImageOrder,
   type ImageOrderItem,
   type ImageOrderMode,
+  type ListingStatus,
 } from "@/lib/admin/listing-core";
 import { cleanupStorageObjects, uploadListingImages } from "@/lib/admin/storage";
 import {
   buildCreatorListingInsertPayload,
   buildCreatorListingUpdatePayload,
-  creatorListingPublishBlockedMessage,
+  buildGeneratedManagedListingSlug,
   creatorSelfManageBlockedMessage,
   validateCreatorListingBase,
   type CreatorListingFormErrors,
@@ -23,6 +23,10 @@ import {
 import { getCreatorListingById } from "@/lib/creator/listings";
 import { requireOwnedCreator } from "@/lib/creator/owner";
 import { createClient } from "@/lib/supabase/server";
+import {
+  isListingVisibilityPreference,
+  resolveCreatorListingState,
+} from "@/lib/listing-visibility";
 
 export type CreatorListingFormState = {
   errors?: CreatorListingFormErrors;
@@ -60,23 +64,21 @@ export async function createCreatorListing(
     return { errors: { images: imageOrder.message } };
   }
 
-  const parsed = parseCreatorListingForm(formData, imageOrder.order.length);
+  const listingId = crypto.randomUUID();
+  const parsed = parseCreatorListingForm(
+    formData,
+    imageOrder.order.length,
+    {
+      status: null,
+      publishedAt: null,
+    },
+    buildGeneratedManagedListingSlug(listingId),
+  );
 
   if (!parsed.ok) {
     return { errors: parsed.errors };
   }
 
-  const publishBlockedMessage = creatorListingPublishBlockedMessage({
-    creatorStatus: creator.status,
-    creatorOnboardedAt: creator.onboardedAt,
-    nextListingStatus: parsed.data.status,
-  });
-
-  if (publishBlockedMessage) {
-    return { errors: { status: publishBlockedMessage } };
-  }
-
-  const listingId = crypto.randomUUID();
   const uploaded = await uploadListingImages({
     creatorId: creator.id,
     listingId,
@@ -100,12 +102,7 @@ export async function createCreatorListing(
     return { errors: { images: imageError } };
   }
 
-  const publishedAt = nextPublishedAt({
-    currentPublishedAt: null,
-    previousStatus: null,
-    nextStatus: parsed.data.status,
-    nowIso: new Date().toISOString(),
-  });
+  const publishedAt = parsed.data.publishedAt;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("listings")
@@ -183,20 +180,18 @@ export async function updateCreatorListing(
     return { errors: { images: "현재 상품에 연결된 기존 이미지만 유지할 수 있습니다." } };
   }
 
-  const parsed = parseCreatorListingForm(formData, imageOrder.order.length);
+  const parsed = parseCreatorListingForm(
+    formData,
+    imageOrder.order.length,
+    {
+      status: current.status,
+      publishedAt: current.publishedAt,
+    },
+    current.slug,
+  );
 
   if (!parsed.ok) {
     return { errors: parsed.errors };
-  }
-
-  const publishBlockedMessage = creatorListingPublishBlockedMessage({
-    creatorStatus: creator.status,
-    creatorOnboardedAt: creator.onboardedAt,
-    nextListingStatus: parsed.data.status,
-  });
-
-  if (publishBlockedMessage) {
-    return { errors: { status: publishBlockedMessage } };
   }
 
   const uploaded = await uploadListingImages({
@@ -222,12 +217,7 @@ export async function updateCreatorListing(
     return { errors: { images: imageError } };
   }
 
-  const publishedAt = nextPublishedAt({
-    currentPublishedAt: current.publishedAt,
-    previousStatus: current.status,
-    nextStatus: parsed.data.status,
-    nowIso: new Date().toISOString(),
-  });
+  const publishedAt = parsed.data.publishedAt;
   const supabase = await createClient();
   const { data: updated, error } = await supabase
     .from("listings")
@@ -261,17 +251,38 @@ export async function updateCreatorListing(
   return { ok: true, message: "광고 상품을 저장했습니다." };
 }
 
-function parseCreatorListingForm(formData: FormData, imageCount: number) {
+function parseCreatorListingForm(
+  formData: FormData,
+  imageCount: number,
+  current: { status: ListingStatus | null; publishedAt: string | null },
+  slug: string,
+) {
+  const visibilityPreference = stringValue(
+    formData.get("visibilityPreference"),
+  );
+
+  if (!isListingVisibilityPreference(visibilityPreference)) {
+    return {
+      ok: false as const,
+      errors: { status: "광고 자리 운영 방식을 선택해주세요." },
+    };
+  }
+
+  const nextState = resolveCreatorListingState({
+    currentStatus: current.status,
+    currentPublishedAt: current.publishedAt,
+    visibilityPreference,
+  });
   const base = validateCreatorListingBase({
     title: stringValue(formData.get("title")),
-    slug: stringValue(formData.get("slug")),
+    slug,
     platform: stringValue(formData.get("platform")),
     channelUrl: nullableStringValue(formData.get("channelUrl")),
     audienceSize: nullableStringValue(formData.get("audienceSize")),
     adFormat: stringValue(formData.get("adFormat")),
     deliverablesText: nullableStringValue(formData.get("deliverables")),
     priceKrw: stringValue(formData.get("priceKrw")),
-    status: stringValue(formData.get("status")),
+    status: nextState.status,
     imageCount,
   });
 
@@ -285,6 +296,8 @@ function parseCreatorListingForm(formData: FormData, imageCount: number) {
       ...base.data,
       channelName: nullableStringValue(formData.get("channelName")),
       description: nullableStringValue(formData.get("description")),
+      visibilityPreference,
+      publishedAt: nextState.publishedAt,
     },
   };
 }

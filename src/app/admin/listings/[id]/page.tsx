@@ -7,9 +7,9 @@ import {
   getAdminListingById,
   getAdminListingCreatorOptions,
 } from "@/lib/admin/listings";
-import { formatListingStatus } from "@/lib/admin/listing-core";
 import { formatKrw } from "@/lib/marketplace/format";
 import { formatRequestDate } from "@/lib/requests";
+import { getListingOperationState } from "@/lib/listing-visibility";
 
 type AdminListingDetailPageProps = {
   params: Promise<{
@@ -32,6 +32,10 @@ export default async function AdminListingDetailPage({
   if (!listing) {
     notFound();
   }
+  const operation = getListingOperationState({
+    status: listing.status,
+    visibilityPreference: listing.visibilityPreference,
+  });
 
   return (
     <main>
@@ -44,7 +48,7 @@ export default async function AdminListingDetailPage({
 
       <div className="mt-4 border-b border-neutral-200 pb-5">
         <p className="text-sm font-medium text-neutral-600">
-          {formatListingStatus(listing.status)}
+          {operation.label}
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           {listing.title}
@@ -67,6 +71,8 @@ export default async function AdminListingDetailPage({
             <h2 className="text-base font-semibold">읽기 전용 상태</h2>
             <dl className="mt-5 space-y-4 text-sm">
               <InfoItem label="크리에이터" value={listing.creatorName} />
+              <InfoItem label="운영 방식" value={operation.label} />
+              <InfoItem label="상태 설명" value={operation.description} />
               <InfoItem
                 label="최초 공개일"
                 value={

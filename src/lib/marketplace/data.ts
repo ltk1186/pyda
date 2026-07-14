@@ -23,6 +23,7 @@ const publicListingSelect = `
   price_krw,
   image_paths,
   status,
+  visibility_preference,
   is_sample,
   published_at,
   created_at,
@@ -52,6 +53,7 @@ export async function getPublicListings(platform: PlatformFilter) {
     .from("listings")
     .select(publicListingSelect)
     .eq("status", "published")
+    .eq("visibility_preference", "public_review")
     .eq("creators.status", "published")
     .order("created_at", { ascending: false });
 
@@ -81,6 +83,7 @@ export async function getPublicListingBySlug(slug: string) {
     .select(publicListingSelect)
     .eq("slug", slug)
     .eq("status", "published")
+    .eq("visibility_preference", "public_review")
     .eq("creators.status", "published")
     .maybeSingle();
 
@@ -110,6 +113,7 @@ export function mapListingRow(row: ListingRow) {
   if (
     !creatorRow ||
     row.status !== "published" ||
+    row.visibility_preference !== "public_review" ||
     creatorRow.status !== "published"
   ) {
     return null;

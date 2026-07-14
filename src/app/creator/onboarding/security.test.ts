@@ -37,7 +37,8 @@ describe("creator onboarding authentication boundary", () => {
     expect(formSource).toContain("if (!isAuthenticated)");
     expect(formSource).toContain("event.preventDefault()");
     expect(completeSource).toContain("CreatorOnboardingDraftCleanup");
-    expect(completeSource).toContain("첫 광고 자리 등록을 신청했습니다.");
+    expect(completeSource).toContain("첫 광고 자리 등록을 받았습니다.");
+    expect(completeSource).toContain("첫 광고 자리 공개를 신청했습니다.");
     expect(completeSource).toContain("보통 1영업일 안에 확인합니다.");
   });
 });

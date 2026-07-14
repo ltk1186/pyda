@@ -57,6 +57,7 @@ export async function submitCreatorOnboarding(
     maintenanceDays: formData.get("maintenanceDays"),
     mentionSeconds: formData.get("mentionSeconds"),
     storyCount: formData.get("storyCount"),
+    visibilityPreference: formData.get("visibilityPreference"),
   });
 
   if (!parsed.ok) {

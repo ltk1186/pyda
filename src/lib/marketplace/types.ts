@@ -57,6 +57,7 @@ export type ListingRow = {
   price_krw: number;
   image_paths: string[] | null;
   status: string;
+  visibility_preference: string;
   is_sample: boolean;
   published_at: string | null;
   created_at: string;

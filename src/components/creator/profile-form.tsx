@@ -13,7 +13,6 @@ type CreatorProfileFormProps = {
   ) => Promise<CreatorProfileFormState>;
   creator: {
     displayName: string;
-    slug: string;
     bio: string | null;
     avatarPath: string | null;
     socialLinks: CreatorSocialLinks;
@@ -39,7 +38,7 @@ export function CreatorProfileForm({
 
       <section className="rounded-lg border border-neutral-200 bg-white p-5">
         <h2 className="text-base font-semibold">기본 정보</h2>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <div className="mt-5">
           <TextField
             defaultValue={creator.displayName}
             error={state.errors?.displayName}
@@ -47,18 +46,11 @@ export function CreatorProfileForm({
             name="displayName"
             required
           />
-          <TextField
-            defaultValue={creator.slug}
-            error={state.errors?.slug}
-            label="slug"
-            name="slug"
-            required
-          />
         </div>
 
         <div className="mt-5">
           <label className="text-sm font-medium text-neutral-950" htmlFor="bio">
-            소개
+            한 줄 소개
           </label>
           <textarea
             className="brand-focus mt-2 min-h-28 w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none"
@@ -70,33 +62,40 @@ export function CreatorProfileForm({
       </section>
 
       <section className="rounded-lg border border-neutral-200 bg-white p-5">
-        <h2 className="text-base font-semibold">Social links</h2>
+        <h2 className="text-base font-semibold">채널</h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <TextField
             defaultValue={creator.socialLinks.youtube}
             error={state.errors?.youtube}
-            label="YouTube URL"
+            label="YouTube 채널 주소"
             name="youtube"
           />
           <TextField
             defaultValue={creator.socialLinks.instagram}
             error={state.errors?.instagram}
-            label="Instagram URL"
+            label="Instagram 계정 주소"
             name="instagram"
           />
-          <TextField
-            defaultValue={creator.socialLinks.blog}
-            error={state.errors?.blog}
-            label="네이버 블로그 URL"
-            name="blog"
-          />
-          <TextField
-            defaultValue={creator.socialLinks.tiktok}
-            error={state.errors?.tiktok}
-            label="TikTok URL"
-            name="tiktok"
-          />
         </div>
+        <details className="mt-5 rounded-md border border-neutral-200 px-4 py-3">
+          <summary className="cursor-pointer text-sm font-medium text-neutral-700">
+            다른 채널
+          </summary>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <TextField
+              defaultValue={creator.socialLinks.blog}
+              error={state.errors?.blog}
+              label="네이버 블로그 주소"
+              name="blog"
+            />
+            <TextField
+              defaultValue={creator.socialLinks.tiktok}
+              error={state.errors?.tiktok}
+              label="TikTok 계정 주소"
+              name="tiktok"
+            />
+          </div>
+        </details>
       </section>
 
       {state.message ? (

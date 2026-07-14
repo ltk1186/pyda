@@ -5,6 +5,7 @@ import type {
   ListingStatus,
 } from "@/lib/admin/listing-core";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { ListingVisibilityPreference } from "@/lib/listing-visibility";
 
 export type AdminListingSampleFilter = "all" | "real" | "sample";
 
@@ -21,6 +22,7 @@ export type AdminListingSummary = {
   status: ListingStatus;
   isSample: boolean;
   createdAt: string;
+  visibilityPreference: ListingVisibilityPreference;
 };
 
 export type AdminListingDetail = AdminListingSummary & {
@@ -76,6 +78,7 @@ type AdminListingRow = {
   mention_seconds: number | null;
   story_count: number | null;
   created_at: string;
+  visibility_preference: ListingVisibilityPreference;
   creators:
     | {
         display_name: string | null;
@@ -114,6 +117,7 @@ const adminListingSelect = `
   mention_seconds,
   story_count,
   created_at,
+  visibility_preference,
   creators (
     display_name
   )
@@ -191,6 +195,7 @@ function mapAdminListing(row: AdminListingRow): AdminListingSummary {
     status: row.status,
     isSample: row.is_sample,
     createdAt: row.created_at,
+    visibilityPreference: row.visibility_preference,
   };
 }
 

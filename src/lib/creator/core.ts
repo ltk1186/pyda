@@ -10,30 +10,28 @@ import {
 } from "@/lib/admin/listing-core";
 import {
   cleanSocialLinks,
-  isValidCreatorSlug,
   validateSocialLinks,
   type CreatorSocialLinks,
 } from "@/lib/admin/creator-core";
+import type { ListingVisibilityPreference } from "@/lib/listing-visibility";
 
 export const maxAvatarImageBytes = 5 * 1024 * 1024;
 export const maxAvatarImageSide = 1200;
 
 export type CreatorProfileFormInput = {
   displayName: string;
-  slug: string;
   bio: string | null;
   socialLinks: CreatorSocialLinks;
 };
 
 export type CreatorProfileFormErrors = Partial<
   Record<
-    "displayName" | "slug" | "youtube" | "instagram" | "blog" | "tiktok",
+    "displayName" | "youtube" | "instagram" | "blog" | "tiktok",
     string
   >
 >;
 
 export type CreatorProfileUpdatePayload = {
-  slug: string;
   display_name: string;
   bio: string | null;
   social_links: CreatorSocialLinks;
@@ -51,6 +49,7 @@ export type CreatorListingFormInput = {
   deliverables: string[];
   priceKrw: number;
   status: ListingStatus;
+  visibilityPreference: ListingVisibilityPreference;
 };
 
 export type CreatorListingInsertPayload = ReturnType<
@@ -66,15 +65,9 @@ export type CreatorListingFormErrors = Omit<AdminListingFormErrors, "creatorId">
 export function validateCreatorProfileForm(input: Record<string, unknown>) {
   const errors: CreatorProfileFormErrors = {};
   const displayName = stringValue(input.displayName).trim();
-  const slug = stringValue(input.slug).trim();
 
   if (!displayName) {
     errors.displayName = "활동명을 입력해주세요.";
-  }
-
-  if (!isValidCreatorSlug(slug)) {
-    errors.slug =
-      "slug는 영문 소문자, 숫자, 하이픈만 사용할 수 있고 하이픈으로 시작하거나 끝날 수 없습니다.";
   }
 
   Object.assign(
@@ -98,7 +91,6 @@ export function validateCreatorProfileForm(input: Record<string, unknown>) {
     ok: true as const,
     data: {
       displayName,
-      slug,
       bio: nullableStringValue(input.bio),
       socialLinks: cleanSocialLinks({
         youtube: input.youtube,
@@ -114,7 +106,6 @@ export function buildCreatorProfileUpdatePayload(
   input: CreatorProfileFormInput,
 ): CreatorProfileUpdatePayload {
   return {
-    slug: input.slug,
     display_name: input.displayName,
     bio: input.bio,
     social_links: input.socialLinks,
@@ -132,6 +123,11 @@ export function buildAvatarStorageObjectPath(params: {
 }) {
   const extension = params.extension.replace(/^\./, "").toLowerCase();
   return `creators/${params.creatorId}/avatar/${params.randomId}.${extension}`;
+}
+
+export function buildGeneratedManagedListingSlug(randomId: string) {
+  const suffix = randomId.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 24);
+  return `listing-${suffix || "generated"}`;
 }
 
 export function getAvatarExtensionForMimeType(type: string) {
@@ -245,12 +241,8 @@ export function creatorListingPublishBlockedMessage(input: {
   creatorOnboardedAt: string | null;
   nextListingStatus: string;
 }) {
-  if (
-    input.creatorStatus === "draft" &&
-    input.creatorOnboardedAt &&
-    input.nextListingStatus === "published"
-  ) {
-    return "등록 검토 중인 크리에이터는 광고 상품을 직접 공개할 수 없습니다.";
+  if (input.nextListingStatus === "published") {
+    return "메인 공개는 크리에이터의 공개 신청 후 Pyda가 확인하여 진행합니다.";
   }
 
   return null;

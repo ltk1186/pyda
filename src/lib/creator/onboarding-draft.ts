@@ -10,11 +10,15 @@ import {
   type OnboardingOptionKey,
   type OnboardingPlatform,
 } from "@/lib/creator/onboarding-core";
+import {
+  isListingVisibilityPreference,
+  type ListingVisibilityPreference,
+} from "@/lib/listing-visibility";
 
 export const creatorOnboardingDraftKey =
-  "pyda.creatorOnboardingDraft.v2";
+  "pyda.creatorOnboardingDraft.v3";
 
-const creatorOnboardingDraftVersion = 2;
+const creatorOnboardingDraftVersion = 3;
 
 export type CreatorOnboardingDraft = {
   step: 1 | 2 | 3;
@@ -40,6 +44,7 @@ export type CreatorOnboardingDraft = {
   turnaroundDays: string;
   maintenanceDays: string;
   mentionSeconds: string;
+  visibilityPreference: ListingVisibilityPreference;
 };
 
 type DraftStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -150,6 +155,7 @@ export function validateCreatorOnboardingDraft(
     maintenanceDays: draft.maintenanceDays,
     mentionSeconds: draft.mentionSeconds,
     storyCount: "",
+    visibilityPreference: draft.visibilityPreference,
   });
 }
 
@@ -170,6 +176,8 @@ function isValidDraftShape(
     !isOnboardingPlatform(value.selectedPlatform) ||
     typeof value.inventoryType !== "string" ||
     !isOnboardingInventoryType(value.inventoryType) ||
+    typeof value.visibilityPreference !== "string" ||
+    !isListingVisibilityPreference(value.visibilityPreference) ||
     !Array.isArray(value.optionKeys)
   ) {
     return false;
