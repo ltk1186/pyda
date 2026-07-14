@@ -19,6 +19,13 @@ export default async function Home({ searchParams }: HomeProps) {
   const activePlatform = normalizePlatformFilter(params.platform);
   const listings = await getPublicListings(activePlatform);
   const headerProfile = await getPublicHeaderViewer();
+  const sampleListingCount = listings.filter(
+    (listing) => listing.isSample || listing.creator.isSample,
+  ).length;
+  const allListingsAreSamples =
+    listings.length > 0 && sampleListingCount === listings.length;
+  const hasSampleAndRealListings =
+    sampleListingCount > 0 && sampleListingCount < listings.length;
   const currentPath =
     activePlatform === "전체"
       ? "/"
@@ -31,10 +38,10 @@ export default async function Home({ searchParams }: HomeProps) {
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            누가, 어디에, 무엇을, 얼마에 해주는가.
+            콘텐츠 속 광고 자리, 이렇게 거래합니다
           </h1>
           <p className="mt-3 text-base leading-7 text-neutral-600">
-            크리에이터의 광고 자리를 직접 보고 원하는 광고를 진행해보세요.
+            현재는 예시 상품을 먼저 보여드리고 있습니다.
           </p>
         </div>
 
@@ -56,7 +63,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 className="brand-primary inline-flex rounded-full border px-4 py-2 text-sm font-semibold transition"
                 href="/advertise"
               >
-                원하는 광고 문의하기
+                원하는 광고 무료로 찾아드려요
               </Link>
               <Link
                 className="brand-outline inline-flex rounded-full border px-4 py-2 text-sm font-semibold transition"
@@ -68,7 +75,23 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </section>
 
-        <div className="mt-7" id="marketplace">
+        <section className="mt-10 max-w-2xl" aria-labelledby="marketplace-title">
+          <h2
+            className="text-xl font-semibold tracking-tight text-neutral-950 sm:text-2xl"
+            id="marketplace-title"
+          >
+            {allListingsAreSamples ? "예시 광고 자리" : "광고 자리 둘러보기"}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            {allListingsAreSamples
+              ? "아래 상품은 콘텐츠 속 광고 자리가 어떻게 거래되는지 보여드리기 위한 예시입니다."
+              : hasSampleAndRealListings
+                ? "예시 상품은 별도 표시로 실제 등록 상품과 구분됩니다."
+                : "크리에이터가 등록한 광고 자리를 확인해보세요."}
+          </p>
+        </section>
+
+        <div className="mt-5" id="marketplace">
           <PlatformFilter activePlatform={activePlatform} />
         </div>
 

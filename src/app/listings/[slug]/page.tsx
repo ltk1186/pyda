@@ -1,7 +1,10 @@
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { ListingGallery } from "@/components/marketplace/listing-gallery";
-import { RequestCta } from "@/components/marketplace/request-cta";
+import {
+  RequestCta,
+  SampleRequestCta,
+} from "@/components/marketplace/request-cta";
 import { SampleBadge } from "@/components/marketplace/sample-badge";
 import {
   getPublicHeaderProfileForUser,
@@ -35,8 +38,9 @@ export default async function ListingDetail({
     notFound();
   }
 
+  const isSample = shouldShowSampleBadge(listing);
   const user = await getCurrentUser();
-  const requestIntent = getSingleParam(query.request) === "1";
+  const requestIntent = getSingleParam(query.request) === "1" && !isSample;
   const requestPath = `/listings/${listing.slug}?request=1`;
 
   if (requestIntent && !user) {
@@ -56,7 +60,11 @@ export default async function ListingDetail({
   return (
     <main
       className={`brand-page min-h-screen text-neutral-950 ${
-        showRequestForm ? "pb-10" : "pb-36 lg:pb-0"
+        showRequestForm
+          ? "pb-10"
+          : isSample
+            ? "pb-52 lg:pb-0"
+            : "pb-36 lg:pb-0"
       }`}
     >
       <PublicHeader
@@ -65,13 +73,26 @@ export default async function ListingDetail({
       />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        {isSample ? (
+          <section className="brand-soft-surface mb-4 flex flex-col gap-2 rounded-xl border border-[var(--brand-border)] px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+            <SampleBadge />
+            <div className="text-sm leading-6">
+              <p className="font-semibold text-[var(--brand-ink)]">
+                실제 등록 상품이 아닙니다.
+              </p>
+              <p className="text-neutral-600">
+                콘텐츠 속 광고 자리가 어떻게 거래되는지 보여드리는
+                예시입니다.
+              </p>
+            </div>
+          </section>
+        ) : null}
+
         <ListingGallery title={listing.title} imagePaths={listing.imagePaths} />
 
         <div className="grid gap-10 py-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section className="min-w-0">
-            {shouldShowSampleBadge(listing) ? <SampleBadge /> : null}
-
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-balance">
+            <h1 className="text-3xl font-semibold tracking-tight text-balance">
               {listing.title}
             </h1>
 
@@ -88,6 +109,7 @@ export default async function ListingDetail({
               ) : null}
               <div>
                 <p className="font-medium text-neutral-950">
+                  {isSample ? "예시 크리에이터 · " : ""}
                   {listing.creator.displayName}
                 </p>
                 {listing.creator.bio ? (
@@ -95,7 +117,7 @@ export default async function ListingDetail({
                     {listing.creator.bio}
                   </p>
                 ) : null}
-                {listing.creator.isFounding ? (
+                {!isSample && listing.creator.isFounding ? (
                   <p className="mt-2 text-xs font-medium text-neutral-600">
                     Founding Creator
                   </p>
@@ -118,7 +140,9 @@ export default async function ListingDetail({
                 </dd>
               </div>
               <div>
-                <dt className="text-neutral-500">가격</dt>
+                <dt className="text-neutral-500">
+                  {isSample ? "예시 가격" : "가격"}
+                </dt>
                 <dd className="mt-1 font-medium text-neutral-950">
                   {formatKrw(listing.priceKrw)}
                 </dd>
@@ -151,7 +175,11 @@ export default async function ListingDetail({
           </section>
 
           <aside>
-            {showRequestForm ? (
+            {isSample ? (
+              <SampleRequestCta
+                href={`/advertise?example=${encodeURIComponent(listing.slug)}`}
+              />
+            ) : showRequestForm ? (
               <div className="lg:sticky lg:top-6">
                 <RequestForm action={requestAction} />
               </div>

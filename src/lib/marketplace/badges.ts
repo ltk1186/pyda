@@ -1,3 +1,6 @@
-export function shouldShowSampleBadge(value: { isSample: boolean }) {
-  return value.isSample;
+export function shouldShowSampleBadge(value: {
+  isSample: boolean;
+  creator?: { isSample: boolean };
+}) {
+  return value.isSample || value.creator?.isSample === true;
 }

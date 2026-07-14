@@ -4,6 +4,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import Home from "@/app/page";
 import { ListingCard } from "@/components/marketplace/listing-card";
+import {
+  RequestCta,
+  SampleRequestCta,
+} from "@/components/marketplace/request-cta";
 import { shouldShowSampleBadge } from "./badges";
 import {
   filterListings,
@@ -115,31 +119,68 @@ function restoreEnv(key: string, value: string | undefined) {
 }
 
 describe("marketplace rendering", () => {
-  it("renders a listing card with required marketplace fields", () => {
+  it("renders sample listings with sample-first marketplace fields", () => {
     const html = renderToStaticMarkup(
       <ListingCard listing={sampleListings[0]} />,
     );
 
     expect(html).toContain("예시 상품");
-    expect(html).toContain("제주한바퀴");
-    expect(html).toContain("Founding Creator");
+    expect(html).toContain("실제 등록 상품 아님");
+    expect(html).toContain("예시 크리에이터 · 제주한바퀴");
+    expect(html).not.toContain("Founding Creator");
     expect(html).toContain("YouTube");
     expect(html).toContain("영상 내 30초 소개");
     expect(html).toContain("제주 여행 영상 내 30초 브랜드 소개");
+    expect(html).toContain("예시 가격");
     expect(html).toContain("₩500,000");
   });
 
-  it("shows sample badges only for sample listings", () => {
+  it("shows sample presentation for sample listings or sample creators", () => {
     expect(shouldShowSampleBadge({ isSample: true })).toBe(true);
     expect(shouldShowSampleBadge({ isSample: false })).toBe(false);
+    expect(
+      shouldShowSampleBadge({
+        isSample: false,
+        creator: { isSample: true },
+      }),
+    ).toBe(true);
 
     const realListing = {
       ...sampleListings[0],
       isSample: false,
+      creator: {
+        ...sampleListings[0].creator,
+        isSample: false,
+        isFounding: true,
+      },
     };
     const html = renderToStaticMarkup(<ListingCard listing={realListing} />);
 
     expect(html).not.toContain("예시 상품");
+    expect(html).not.toContain("예시 가격");
+    expect(html).toContain("Founding Creator");
+  });
+
+  it("keeps sample and real listing detail CTAs distinct", () => {
+    const sampleHtml = renderToStaticMarkup(
+      <SampleRequestCta href="/advertise?example=sample-jeju-youtube-30s" />,
+    );
+    const realHtml = renderToStaticMarkup(
+      <RequestCta href="/listings/real-listing?request=1" requestIntent={false} />,
+    );
+
+    expect(sampleHtml).toContain(
+      "이 상품은 광고 방식을 보여드리기 위한 예시입니다.",
+    );
+    expect(sampleHtml).toContain(
+      "이 예시와 비슷한 광고 무료로 찾아보기",
+    );
+    expect(sampleHtml).toContain(
+      'href="/advertise?example=sample-jeju-youtube-30s"',
+    );
+    expect(sampleHtml).not.toContain("광고 진행하기");
+    expect(realHtml).toContain("광고 진행하기");
+    expect(realHtml).not.toContain("예시 상품");
   });
 
   it("renders the public home with platform filter and listing grid content", async () => {
@@ -148,8 +189,10 @@ describe("marketplace rendering", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("누가, 어디에, 무엇을, 얼마에 해주는가.");
-    expect(html).toContain(
+    expect(html).toContain("콘텐츠 속 광고 자리, 이렇게 거래합니다");
+    expect(html).toContain("현재는 예시 상품을 먼저 보여드리고 있습니다.");
+    expect(html).not.toContain("누가, 어디에, 무엇을, 얼마에 해주는가.");
+    expect(html).not.toContain(
       "크리에이터의 광고 자리를 직접 보고 원하는 광고를 진행해보세요.",
     );
     expect(html).not.toContain(
@@ -169,6 +212,10 @@ describe("marketplace rendering", () => {
     expect(html).toContain("Instagram");
     expect(html).toContain("네이버 블로그");
     expect(html).toContain("TikTok");
+    expect(html).toContain("예시 광고 자리");
+    expect(html).toContain(
+      "아래 상품은 콘텐츠 속 광고 자리가 어떻게 거래되는지 보여드리기 위한 예시입니다.",
+    );
     expect(html).toContain("음식·간편식 TikTok 20초 숏폼");
     expect(html).not.toContain("이런 식으로 광고할 수 있어요");
     expect(html).not.toContain("제주 카페");
@@ -176,6 +223,7 @@ describe("marketplace rendering", () => {
       "상품에 광고를 요청하거나, 원하는 광고 조건을 직접 알려주세요.",
     );
     expect(html).toContain('href="/advertise"');
+    expect(html).toContain("원하는 광고 무료로 찾아드려요");
     expect(html).toContain("제주에서 크리에이터 광고 연결을 검증하고 있습니다.");
     expect(html).not.toContain("예시 상품으로 첫 거래 흐름을 검증합니다.");
   });
