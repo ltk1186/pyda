@@ -133,6 +133,8 @@ describe("marketplace rendering", () => {
     expect(html).toContain("제주 여행 영상 내 30초 브랜드 소개");
     expect(html).toContain("예시 가격");
     expect(html).toContain("₩500,000");
+    expect(html).toContain("aspect-square");
+    expect(html).not.toContain("aspect-[4/5]");
   });
 
   it("shows sample presentation for sample listings or sample creators", () => {
@@ -159,6 +161,7 @@ describe("marketplace rendering", () => {
     expect(html).not.toContain("예시 상품");
     expect(html).not.toContain("예시 가격");
     expect(html).toContain("Founding Creator");
+    expect(html).toContain("aspect-square");
   });
 
   it("keeps sample and real listing detail CTAs distinct", () => {

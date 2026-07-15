@@ -38,7 +38,7 @@ export function ListingCard({ listing }: ListingCardProps) {
       ) : null}
 
       <div
-        className={`relative aspect-[4/5] overflow-hidden bg-neutral-100 ${
+        className={`relative aspect-square overflow-hidden bg-neutral-100 ${
           isSample ? "" : "rounded-lg"
         }`}
       >
